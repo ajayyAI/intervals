@@ -1,17 +1,44 @@
 import { Card } from '@/components';
-import { AVAILABLE_SOUNDS, useIntervalChime } from '@/services/audio';
+import { AVAILABLE_SOUNDS, type SoundName } from '@/services/audio';
 import { useStore } from '@/store/useStore';
 import { Colors, Layout, Spacing, Typography } from '@/theme';
 import { Ionicons } from '@expo/vector-icons';
+import { useAudioPlayer } from 'expo-audio';
 import Constants from 'expo-constants';
 import * as Haptics from 'expo-haptics';
 import { ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const INTERVAL_OPTIONS = [15, 20, 25, 30, 45, 60];
 
+// Sound sources for preview
+const SOUND_SOURCES: Record<SoundName, number> = {
+  glass: require('../../assets/sounds/glass.mp3'),
+  wood: require('../../assets/sounds/wood.mp3'),
+  bell: require('../../assets/sounds/bell.mp3'),
+  chime: require('../../assets/sounds/chime.mp3'),
+  bowl: require('../../assets/sounds/bowl.mp3'),
+};
+
 export default function SettingsScreen() {
+  const insets = useSafeAreaInsets();
   const { settings, updateSettings } = useStore();
+  const bottomPadding = Math.max(insets.bottom, 16) + 64 + 24;
+
+  // Audio players for each sound (for preview)
+  const glassPlayer = useAudioPlayer(SOUND_SOURCES.glass);
+  const woodPlayer = useAudioPlayer(SOUND_SOURCES.wood);
+  const bellPlayer = useAudioPlayer(SOUND_SOURCES.bell);
+  const chimePlayer = useAudioPlayer(SOUND_SOURCES.chime);
+  const bowlPlayer = useAudioPlayer(SOUND_SOURCES.bowl);
+
+  const players: Record<SoundName, ReturnType<typeof useAudioPlayer>> = {
+    glass: glassPlayer,
+    wood: woodPlayer,
+    bell: bellPlayer,
+    chime: chimePlayer,
+    bowl: bowlPlayer,
+  };
 
   const handleIntervalChange = async (minutes: number) => {
     if (settings.hapticEnabled) {
@@ -27,18 +54,35 @@ export default function SettingsScreen() {
     updateSettings({ [key]: value });
   };
 
+  const handleSoundSelect = async (soundId: SoundName) => {
+    if (settings.hapticEnabled) {
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    updateSettings({ selectedSound: soundId });
+
+    // Preview the sound
+    const player = players[soundId];
+    if (player) {
+      player.seekTo(0);
+      player.play();
+    }
+  };
+
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+    <View style={styles.container}>
+      <ScrollView
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: bottomPadding }]}
+        showsVerticalScrollIndicator={false}
+      >
         {/* Header */}
-        <View style={styles.header}>
+        <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
           <Text style={styles.title}>Settings</Text>
         </View>
 
         {/* Interval Duration */}
         <Card style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Ionicons name="timer-outline" size={20} color={Colors.accent} />
+            <Ionicons name="timer-outline" size={20} color={Colors.text.secondary} />
             <Text style={styles.sectionTitle}>Interval Duration</Text>
           </View>
           <Text style={styles.sectionHint}>Time between check-ins</Text>
@@ -77,7 +121,7 @@ export default function SettingsScreen() {
         {/* Sound & Notifications */}
         <Card style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Ionicons name="notifications-outline" size={20} color={Colors.accent} />
+            <Ionicons name="notifications-outline" size={20} color={Colors.text.secondary} />
             <Text style={styles.sectionTitle}>Alerts</Text>
           </View>
 
@@ -89,8 +133,8 @@ export default function SettingsScreen() {
             <Switch
               value={settings.soundEnabled}
               onValueChange={(v) => handleToggle('soundEnabled', v)}
-              trackColor={{ false: Colors.bg.elevated, true: Colors.accent }}
-              thumbColor={Colors.text.primary}
+              trackColor={{ false: Colors.bg.elevated, true: Colors.text.muted }}
+              thumbColor={settings.soundEnabled ? Colors.text.primary : Colors.text.secondary}
             />
           </View>
 
@@ -102,20 +146,12 @@ export default function SettingsScreen() {
                 return (
                   <TouchableOpacity
                     key={sound.id}
-                    onPress={async () => {
-                      if (settings.hapticEnabled) {
-                        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                      }
-                      updateSettings({ selectedSound: sound.id });
-                      // Preview sound
-                      const { playChime } = useIntervalChime(sound.id);
-                      playChime();
-                    }}
+                    onPress={() => handleSoundSelect(sound.id)}
                     style={[styles.soundButton, isSelected && styles.soundButtonActive]}
                   >
                     <Ionicons
                       name={isSelected ? 'musical-notes' : 'musical-notes-outline'}
-                      size={20}
+                      size={18}
                       color={isSelected ? Colors.bg.primary : Colors.text.secondary}
                     />
                     <Text style={[styles.soundText, isSelected && styles.soundTextActive]}>
@@ -137,8 +173,8 @@ export default function SettingsScreen() {
             <Switch
               value={settings.hapticEnabled}
               onValueChange={(v) => handleToggle('hapticEnabled', v)}
-              trackColor={{ false: Colors.bg.elevated, true: Colors.accent }}
-              thumbColor={Colors.text.primary}
+              trackColor={{ false: Colors.bg.elevated, true: Colors.text.muted }}
+              thumbColor={settings.hapticEnabled ? Colors.text.primary : Colors.text.secondary}
             />
           </View>
 
@@ -152,8 +188,10 @@ export default function SettingsScreen() {
             <Switch
               value={settings.notificationsEnabled}
               onValueChange={(v) => handleToggle('notificationsEnabled', v)}
-              trackColor={{ false: Colors.bg.elevated, true: Colors.accent }}
-              thumbColor={Colors.text.primary}
+              trackColor={{ false: Colors.bg.elevated, true: Colors.text.muted }}
+              thumbColor={
+                settings.notificationsEnabled ? Colors.text.primary : Colors.text.secondary
+              }
             />
           </View>
         </Card>
@@ -161,7 +199,7 @@ export default function SettingsScreen() {
         {/* About */}
         <Card style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Ionicons name="information-circle-outline" size={20} color={Colors.accent} />
+            <Ionicons name="information-circle-outline" size={20} color={Colors.text.secondary} />
             <Text style={styles.sectionTitle}>About</Text>
           </View>
           <Text style={styles.versionText}>
@@ -170,7 +208,7 @@ export default function SettingsScreen() {
           <Text style={styles.tagline}>A premium interval focus system</Text>
         </Card>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -181,7 +219,6 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: Layout.screenPadding,
-    paddingBottom: 100,
   },
   header: {
     marginBottom: Spacing.xl,
@@ -215,17 +252,21 @@ const styles = StyleSheet.create({
   },
   intervalButton: {
     backgroundColor: Colors.bg.primary,
-    borderRadius: Layout.buttonRadius,
+    borderRadius: 16,
     paddingVertical: Spacing.md,
     paddingHorizontal: Spacing.lg,
     alignItems: 'center',
     minWidth: 72,
+    borderWidth: 1,
+    borderColor: Colors.border,
   },
   intervalButtonActive: {
-    backgroundColor: Colors.accent,
+    backgroundColor: Colors.text.primary,
+    borderColor: Colors.text.primary,
   },
   intervalText: {
-    ...Typography.intervalSmall,
+    fontSize: 20,
+    fontWeight: '600',
     color: Colors.text.secondary,
   },
   intervalTextActive: {
@@ -270,7 +311,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: Colors.bg.elevated,
-    borderRadius: Layout.buttonRadius,
+    borderRadius: 12,
     paddingVertical: Spacing.sm,
     paddingHorizontal: Spacing.md,
     gap: Spacing.xs,
@@ -278,7 +319,7 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
   },
   soundButtonActive: {
-    backgroundColor: Colors.accent,
+    backgroundColor: Colors.text.primary,
   },
   soundText: {
     ...Typography.bodySmall,

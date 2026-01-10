@@ -1,20 +1,29 @@
 export const Colors = {
   bg: {
-    primary: '#0B0C0F',
-    card: '#15181D',
-    elevated: '#1B1F26',
+    primary: '#0A0A0B',
+    card: '#141416',
+    elevated: '#1C1C1F',
+    tabBar: '#0F0F10',
   },
 
   text: {
-    primary: '#F2F3F5',
-    secondary: '#9CA0A8',
-    muted: '#6F747D',
+    primary: '#FAFAFA',
+    secondary: '#A1A1AA',
+    muted: '#71717A',
   },
 
-  accent: '#B8A77D',
-  danger: '#D45757',
-  success: '#4FAE8B',
+  accent: '#FAFAFA',
+  accentMuted: '#A1A1AA',
+  danger: '#EF4444',
+  success: '#22C55E',
 
-  border: '#252930',
-  inactive: '#3A3E45',
+  border: '#27272A',
+  inactive: '#3F3F46',
+
+  // Tab bar specific
+  tab: {
+    active: '#FAFAFA',
+    inactive: '#52525B',
+    indicator: '#FAFAFA',
+  },
 };

@@ -3,10 +3,12 @@ import { useStore } from '@/store/useStore';
 import { Colors, Layout, Spacing, Typography } from '@/theme';
 import { useMemo } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function InsightsScreen() {
+  const insets = useSafeAreaInsets();
   const { sessions, notes } = useStore();
+  const bottomPadding = Math.max(insets.bottom, 16) + 64 + 24;
 
   const stats = useMemo(() => {
     const completed = sessions.filter((s) => s.status === 'completed');
@@ -30,10 +32,13 @@ export default function InsightsScreen() {
   }, [sessions, notes]);
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+    <View style={styles.container}>
+      <ScrollView
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: bottomPadding }]}
+        showsVerticalScrollIndicator={false}
+      >
         {/* Header */}
-        <View style={styles.header}>
+        <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
           <Text style={styles.title}>Insights</Text>
         </View>
 
@@ -75,7 +80,7 @@ export default function InsightsScreen() {
           </View>
         </Card>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -86,7 +91,6 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: Layout.screenPadding,
-    paddingBottom: 100,
   },
   header: {
     marginBottom: Spacing.xl,
@@ -99,8 +103,11 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.lg,
   },
   sectionTitle: {
-    ...Typography.labelUppercase,
+    fontSize: 11,
+    fontWeight: '600',
     color: Colors.text.muted,
+    letterSpacing: 1.5,
+    textTransform: 'uppercase',
     marginBottom: Spacing.lg,
   },
   statGrid: {
@@ -114,13 +121,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   statValue: {
-    ...Typography.countdown,
+    fontSize: 36,
+    fontWeight: '300',
     color: Colors.text.primary,
-    fontSize: 40,
+    fontVariant: ['tabular-nums'],
   },
   statLabel: {
-    ...Typography.labelSmall,
+    fontSize: 11,
+    fontWeight: '500',
     color: Colors.text.muted,
+    letterSpacing: 0.5,
     marginTop: Spacing.xs,
+    textTransform: 'uppercase',
   },
 });

@@ -4,10 +4,12 @@ import { Colors, Layout, Spacing, Typography } from '@/theme';
 import { FlashList } from '@shopify/flash-list';
 import { format, isToday, isYesterday } from 'date-fns';
 import { StyleSheet, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function HistoryScreen() {
+  const insets = useSafeAreaInsets();
   const { sessions, notes } = useStore();
+  const bottomPadding = Math.max(insets.bottom, 16) + 64 + 24;
 
   const completedSessions = sessions.filter((s) => s.status === 'completed');
 
@@ -72,8 +74,8 @@ export default function HistoryScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
-      <View style={styles.header}>
+    <View style={styles.container}>
+      <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
         <Text style={styles.title}>History</Text>
         <Text style={styles.subtitle}>{completedSessions.length} sessions</Text>
       </View>
@@ -82,7 +84,10 @@ export default function HistoryScreen() {
         data={completedSessions}
         renderItem={renderSession}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContent}
+        contentContainerStyle={{
+          paddingHorizontal: Layout.screenPadding,
+          paddingBottom: bottomPadding,
+        }}
         showsVerticalScrollIndicator={false}
         ListEmptyComponent={
           <View style={styles.emptyState}>
@@ -91,7 +96,7 @@ export default function HistoryScreen() {
           </View>
         }
       />
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -102,7 +107,6 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: Layout.screenPadding,
-    paddingTop: Spacing.md,
     paddingBottom: Spacing.lg,
   },
   title: {
@@ -113,10 +117,6 @@ const styles = StyleSheet.create({
     ...Typography.bodySmall,
     color: Colors.text.muted,
     marginTop: Spacing.xs,
-  },
-  listContent: {
-    paddingHorizontal: Layout.screenPadding,
-    paddingBottom: 100,
   },
   sessionCard: {
     marginBottom: Spacing.md,
@@ -143,9 +143,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   statValue: {
-    ...Typography.interval,
-    color: Colors.text.primary,
     fontSize: 20,
+    fontWeight: '600',
+    color: Colors.text.primary,
   },
   statLabel: {
     ...Typography.caption,
@@ -165,7 +165,7 @@ const styles = StyleSheet.create({
   },
   moreNotes: {
     ...Typography.caption,
-    color: Colors.accent,
+    color: Colors.text.secondary,
     marginTop: 4,
   },
   emptyState: {

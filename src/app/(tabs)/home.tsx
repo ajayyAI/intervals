@@ -9,21 +9,18 @@ import { useStore } from '@/store/useStore';
 import { Colors, Spacing, Typography } from '@/theme';
 import * as Haptics from 'expo-haptics';
 import { useEffect, useRef, useState } from 'react';
-import { AppState, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { AppState, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const {
     activeSession,
-    currentLabel,
     timerSeconds,
     isTimerRunning,
     isCheckInModalVisible,
     settings,
-    setCurrentLabel,
     setTimerSeconds,
-    setIsTimerRunning,
     setCheckInModalVisible,
     startSession,
     pauseSession,
@@ -63,6 +60,12 @@ export default function HomeScreen() {
         setLocalElapsed((prev) => prev + 1);
       }, 1000);
     } else if (timerSeconds === 0 && isTimerRunning && activeSession) {
+      // Stop timer first to prevent multiple triggers
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+
       if (settings.hapticEnabled) {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
       }
@@ -73,9 +76,21 @@ export default function HomeScreen() {
     }
 
     return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
     };
-  }, [isTimerRunning, timerSeconds, activeSession]);
+  }, [
+    isTimerRunning,
+    timerSeconds,
+    activeSession,
+    settings.hapticEnabled,
+    settings.soundEnabled,
+    playChime,
+    completeInterval,
+    setTimerSeconds,
+  ]);
 
   useEffect(() => {
     const subscription = AppState.addEventListener('change', (nextState) => {
@@ -90,28 +105,24 @@ export default function HomeScreen() {
     });
 
     return () => subscription.remove();
-  }, [isTimerRunning, settings.intervalMinutes]);
+  }, [isTimerRunning, settings.intervalMinutes, setTimerSeconds]);
 
   const handleStart = async () => {
-    if (!currentLabel.trim()) {
-      if (settings.hapticEnabled) {
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      }
-      return;
-    }
-
     if (settings.hapticEnabled) {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
     }
 
     if (settings.notificationsEnabled) {
       const intervalSeconds = settings.intervalMinutes * 60;
-      notificationIdRef.current = await scheduleIntervalNotification(intervalSeconds, currentLabel);
+      notificationIdRef.current = await scheduleIntervalNotification(
+        intervalSeconds,
+        'Focus Session'
+      );
     }
 
     startTimeRef.current = Date.now();
     setLocalElapsed(0);
-    startSession(currentLabel);
+    startSession('Focus Session');
   };
 
   const handleTimerPress = async () => {
@@ -161,7 +172,7 @@ export default function HomeScreen() {
       );
     }
     startTimeRef.current = Date.now();
-    setIsTimerRunning(true);
+    setLocalElapsed(0);
   };
 
   const handleCheckInBreak = async () => {
@@ -181,6 +192,9 @@ export default function HomeScreen() {
     return nextChime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
+  // Calculate bottom padding for floating tab bar
+  const bottomPadding = Math.max(insets.bottom, 16) + 64 + 24;
+
   return (
     <View style={styles.container}>
       {/* Top section with current time */}
@@ -193,7 +207,7 @@ export default function HomeScreen() {
       {/* Center section - Timer dominates */}
       <View style={styles.centerSection}>
         <Pressable
-          onPress={handleTimerPress}
+          onPress={activeSession ? handleTimerPress : undefined}
           onLongPress={activeSession ? handleEnd : undefined}
           style={styles.timerPressable}
         >
@@ -204,25 +218,15 @@ export default function HomeScreen() {
           <View style={styles.statusContainer}>
             <Text style={styles.statusLabel}>{isTimerRunning ? 'NEXT CHIME' : 'PAUSED'}</Text>
             {isTimerRunning && <Text style={styles.nextChime}>{formatNextChime()}</Text>}
-            <Text style={styles.sessionLabel}>{activeSession.label}</Text>
           </View>
         ) : (
-          <View style={styles.inputContainer}>
-            <TextInput
-              style={styles.labelInput}
-              placeholder="What are you focusing on?"
-              placeholderTextColor={Colors.text.muted}
-              value={currentLabel}
-              onChangeText={setCurrentLabel}
-              returnKeyType="done"
-              onSubmitEditing={handleStart}
-            />
+          <View style={styles.startContainer}>
+            <Text style={styles.readyText}>Ready to focus?</Text>
             <Button
-              title="Begin"
+              title="Start Session"
               onPress={handleStart}
               variant="primary"
               size="large"
-              disabled={!currentLabel.trim()}
               style={styles.startButton}
             />
           </View>
@@ -230,7 +234,7 @@ export default function HomeScreen() {
       </View>
 
       {/* Bottom section - Stats and hints */}
-      <View style={styles.bottomSection}>
+      <View style={[styles.bottomSection, { paddingBottom: bottomPadding }]}>
         {activeSession && (
           <>
             <View style={styles.statsRow}>
@@ -273,11 +277,10 @@ const styles = StyleSheet.create({
     paddingBottom: Spacing.lg,
   },
   currentTime: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '500',
     color: Colors.text.muted,
-    letterSpacing: 3,
-    textTransform: 'uppercase',
+    letterSpacing: 2,
   },
   centerSection: {
     flex: 1,
@@ -300,39 +303,26 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.xs,
   },
   nextChime: {
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: '500',
     color: Colors.text.secondary,
     fontVariant: ['tabular-nums'],
     letterSpacing: -0.5,
   },
-  sessionLabel: {
-    ...Typography.body,
-    color: Colors.text.secondary,
-    marginTop: Spacing.md,
-    opacity: 0.8,
-  },
-  inputContainer: {
-    width: '100%',
-    maxWidth: 320,
+  startContainer: {
+    alignItems: 'center',
     marginTop: Spacing.xxl,
-    gap: Spacing.md,
+    gap: Spacing.lg,
   },
-  labelInput: {
-    backgroundColor: Colors.bg.card,
-    borderRadius: 16,
-    paddingVertical: 18,
-    paddingHorizontal: 24,
-    fontSize: 16,
-    color: Colors.text.primary,
-    textAlign: 'center',
+  readyText: {
+    ...Typography.body,
+    color: Colors.text.muted,
   },
   startButton: {
-    width: '100%',
+    minWidth: 200,
   },
   bottomSection: {
     paddingHorizontal: 20,
-    paddingBottom: 24,
     minHeight: 100,
   },
   statsRow: {

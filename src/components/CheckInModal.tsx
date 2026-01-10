@@ -37,7 +37,7 @@ export const CheckInModal: React.FC<CheckInModalProps> = ({
     if (settings?.hapticEnabled) {
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     }
-    await submitCheckIn(note);
+    submitCheckIn(note);
     setNote('');
     onContinue();
   };
@@ -46,7 +46,7 @@ export const CheckInModal: React.FC<CheckInModalProps> = ({
     if (settings?.hapticEnabled) {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
-    await submitCheckIn(note);
+    submitCheckIn(note);
     setNote('');
     onTakeBreak();
   };
@@ -78,7 +78,12 @@ export const CheckInModal: React.FC<CheckInModalProps> = ({
             />
 
             <View style={styles.buttonRow}>
-              <Button title="End" onPress={handleTakeBreak} variant="ghost" style={styles.button} />
+              <Button
+                title="End Session"
+                onPress={handleTakeBreak}
+                variant="ghost"
+                style={styles.button}
+              />
               <Button
                 title="Continue"
                 onPress={handleContinue}
@@ -100,7 +105,7 @@ const styles = StyleSheet.create({
   },
   backdrop: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
   },
   modalContent: {
     paddingHorizontal: Layout.screenPadding,
@@ -122,12 +127,14 @@ const styles = StyleSheet.create({
   },
   input: {
     backgroundColor: Colors.bg.primary,
-    borderRadius: Layout.inputRadius,
+    borderRadius: 12,
     padding: Spacing.md,
     color: Colors.text.primary,
     fontSize: 16,
     minHeight: 80,
     marginBottom: Spacing.lg,
+    borderWidth: 1,
+    borderColor: Colors.border,
   },
   buttonRow: {
     flexDirection: 'row',
