@@ -43,7 +43,38 @@
           "backgroundColor": "#000000"
         }
       ],
-      "expo-audio"
+      "expo-audio",
+      [
+        "expo-font",
+        {
+          "fonts": [
+            "./assets/fonts/SFProDisplay-Regular.otf",
+            "./assets/fonts/SFProDisplay-Medium.otf",
+            "./assets/fonts/SFProDisplay-Bold.otf"
+          ],
+          "android": {
+            "fonts": [
+              {
+                "fontFamily": "SF Pro Display",
+                "fontDefinitions": [
+                  {
+                    "path": "./assets/fonts/SFProDisplay-Regular.otf",
+                    "weight": 400
+                  },
+                  {
+                    "path": "./assets/fonts/SFProDisplay-Medium.otf",
+                    "weight": 500
+                  },
+                  {
+                    "path": "./assets/fonts/SFProDisplay-Bold.otf",
+                    "weight": 600
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

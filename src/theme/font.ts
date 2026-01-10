@@ -1,30 +1,19 @@
-import { Platform } from 'react-native';
+const FONT_FAMILY_DISPLAY = 'SF Pro Display';
 
-// Font family selection
-const displayFont = Platform.select({
-  ios: 'SF Pro Display',
-  android: 'Roboto',
-  default: 'System',
-});
-
-const numericFont = Platform.select({
-  ios: 'SF Pro Rounded',
-  android: 'Roboto',
-  default: 'System',
-});
+// For numeric display, we use the same font with tabular numerals feature
+// SF Pro Rounded is not available, so we use Display with tnum feature
+const FONT_FAMILY_NUMERIC = FONT_FAMILY_DISPLAY;
 
 export const Fonts = {
   display: {
-    family: displayFont,
-    weights: {
-      regular: '400' as const,
-      medium: '500' as const,
-      semibold: '600' as const,
-    },
+    regular: FONT_FAMILY_DISPLAY,
+    medium: FONT_FAMILY_DISPLAY,
+    semibold: FONT_FAMILY_DISPLAY,
   },
   numeric: {
-    family: numericFont,
-    // Tabular numerals for timer alignment
+    family: FONT_FAMILY_NUMERIC,
+    medium: FONT_FAMILY_NUMERIC,
+    semibold: FONT_FAMILY_NUMERIC,
     featureSettings: ['tnum', 'lnum'],
   },
 };
@@ -53,7 +42,6 @@ export const FontSizes = {
   caption: 12,
 };
 
-// Font weights
 export const FontWeights = {
   regular: '400' as const,
   medium: '500' as const,

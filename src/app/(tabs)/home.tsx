@@ -38,7 +38,6 @@ export default function HomeScreen() {
   const [localElapsed, setLocalElapsed] = useState(0);
   const [currentTime, setCurrentTime] = useState(new Date());
 
-  // Audio chime hook
   const { playChime } = useIntervalChime(
     settings.selectedSound as 'glass' | 'wood' | 'bell' | 'chime' | 'bowl'
   );
@@ -50,14 +49,12 @@ export default function HomeScreen() {
     return () => clearInterval(clockInterval);
   }, []);
 
-  // Request notification permissions on mount
   useEffect(() => {
     if (settings.notificationsEnabled) {
       requestNotificationPermissions();
     }
   }, [settings.notificationsEnabled]);
 
-  // Timer countdown
   useEffect(() => {
     if (isTimerRunning && timerSeconds > 0) {
       timerRef.current = setInterval(() => {
@@ -65,7 +62,6 @@ export default function HomeScreen() {
         setLocalElapsed((prev) => prev + 1);
       }, 1000);
     } else if (timerSeconds === 0 && isTimerRunning && activeSession) {
-      // Interval complete - show check-in
       if (settings.hapticEnabled) {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
       }
@@ -80,7 +76,6 @@ export default function HomeScreen() {
     };
   }, [isTimerRunning, timerSeconds, activeSession]);
 
-  // Background state handling
   useEffect(() => {
     const subscription = AppState.addEventListener('change', (nextState) => {
       if (appState.current.match(/inactive|background/) && nextState === 'active') {
@@ -108,7 +103,6 @@ export default function HomeScreen() {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
     }
 
-    // Schedule background notification
     if (settings.notificationsEnabled) {
       const intervalSeconds = settings.intervalMinutes * 60;
       notificationIdRef.current = await scheduleIntervalNotification(intervalSeconds, currentLabel);
@@ -127,14 +121,12 @@ export default function HomeScreen() {
     }
 
     if (isTimerRunning) {
-      // Cancel notification on pause
       if (notificationIdRef.current) {
         await cancelNotification(notificationIdRef.current);
         notificationIdRef.current = null;
       }
       pauseSession();
     } else {
-      // Reschedule notification on resume
       if (settings.notificationsEnabled) {
         notificationIdRef.current = await scheduleIntervalNotification(
           timerSeconds,
@@ -150,7 +142,7 @@ export default function HomeScreen() {
     if (settings.hapticEnabled) {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
     }
-    // Cancel any pending notification
+
     if (notificationIdRef.current) {
       await cancelNotification(notificationIdRef.current);
       notificationIdRef.current = null;
@@ -161,7 +153,6 @@ export default function HomeScreen() {
   };
 
   const handleCheckInContinue = async () => {
-    // Schedule notification for next interval
     if (settings.notificationsEnabled && activeSession) {
       notificationIdRef.current = await scheduleIntervalNotification(
         settings.intervalMinutes * 60,
@@ -173,7 +164,6 @@ export default function HomeScreen() {
   };
 
   const handleCheckInBreak = async () => {
-    // Cancel any pending notification
     if (notificationIdRef.current) {
       await cancelNotification(notificationIdRef.current);
       notificationIdRef.current = null;
@@ -193,19 +183,16 @@ export default function HomeScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <View style={styles.content}>
-        {/* Current Time */}
         <Text style={styles.currentTime}>
           {currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
         </Text>
 
-        {/* Main Timer - Tappable */}
         <Pressable onPress={handleTimerPress} onLongPress={activeSession ? handleEnd : undefined}>
           <View style={styles.timerContainer}>
             <FlipTimer seconds={activeSession ? timerSeconds : settings.intervalMinutes * 60} />
           </View>
         </Pressable>
 
-        {/* Status / Next Chime */}
         {activeSession ? (
           <View style={styles.statusContainer}>
             <Text style={styles.statusLabel}>{isTimerRunning ? 'NEXT CHIME' : 'PAUSED'}</Text>
@@ -234,7 +221,6 @@ export default function HomeScreen() {
           </View>
         )}
 
-        {/* Session Stats */}
         {activeSession && (
           <View style={styles.statsRow}>
             <View style={styles.statItem}>
@@ -249,7 +235,6 @@ export default function HomeScreen() {
         )}
       </View>
 
-      {/* Hints */}
       {activeSession && (
         <View style={styles.hintsContainer}>
           <Text style={styles.hint}>Tap to {isTimerRunning ? 'pause' : 'resume'}</Text>

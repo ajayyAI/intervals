@@ -1,4 +1,5 @@
 import { Card } from '@/components';
+import { AVAILABLE_SOUNDS, useIntervalChime } from '@/services/audio';
 import { useStore } from '@/store/useStore';
 import { Colors, Layout, Spacing, Typography } from '@/theme';
 import { Ionicons } from '@expo/vector-icons';
@@ -92,6 +93,39 @@ export default function SettingsScreen() {
               thumbColor={Colors.text.primary}
             />
           </View>
+
+          {/* Sound Selection */}
+          {settings.soundEnabled && (
+            <View style={styles.soundGrid}>
+              {AVAILABLE_SOUNDS.map((sound) => {
+                const isSelected = settings.selectedSound === sound.id;
+                return (
+                  <TouchableOpacity
+                    key={sound.id}
+                    onPress={async () => {
+                      if (settings.hapticEnabled) {
+                        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      }
+                      updateSettings({ selectedSound: sound.id });
+                      // Preview sound
+                      const { playChime } = useIntervalChime(sound.id);
+                      playChime();
+                    }}
+                    style={[styles.soundButton, isSelected && styles.soundButtonActive]}
+                  >
+                    <Ionicons
+                      name={isSelected ? 'musical-notes' : 'musical-notes-outline'}
+                      size={20}
+                      color={isSelected ? Colors.bg.primary : Colors.text.secondary}
+                    />
+                    <Text style={[styles.soundText, isSelected && styles.soundTextActive]}>
+                      {sound.label}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          )}
 
           <View style={styles.divider} />
 
@@ -224,6 +258,35 @@ const styles = StyleSheet.create({
     height: 1,
     backgroundColor: Colors.border,
     marginVertical: Spacing.sm,
+  },
+  soundGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacing.sm,
+    marginBottom: Spacing.md,
+    marginTop: Spacing.xs,
+  },
+  soundButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.bg.elevated,
+    borderRadius: Layout.buttonRadius,
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.md,
+    gap: Spacing.xs,
+    borderWidth: 1,
+    borderColor: 'transparent',
+  },
+  soundButtonActive: {
+    backgroundColor: Colors.accent,
+  },
+  soundText: {
+    ...Typography.bodySmall,
+    color: Colors.text.secondary,
+  },
+  soundTextActive: {
+    color: Colors.bg.primary,
+    fontWeight: '600',
   },
   versionText: {
     ...Typography.bodySmall,
