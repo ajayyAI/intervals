@@ -6,7 +6,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function TabLayout() {
   const insets = useSafeAreaInsets();
-  const bottomPadding = Math.max(insets.bottom, 16);
 
   return (
     <View style={styles.container}>
@@ -14,34 +13,18 @@ export default function TabLayout() {
         screenOptions={{
           headerShown: false,
           tabBarStyle: {
-            position: 'absolute',
-            bottom: bottomPadding,
-            left: 20,
-            right: 20,
-            height: 64,
             backgroundColor: Colors.bg.tabBar,
-            borderRadius: 32,
-            borderTopWidth: 0,
-            borderWidth: 1,
-            borderColor: Colors.border,
-            paddingHorizontal: 8,
-            elevation: 0,
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 8 },
-            shadowOpacity: 0.3,
-            shadowRadius: 16,
-          },
-          tabBarItemStyle: {
-            paddingVertical: 8,
-            borderRadius: 24,
-            marginHorizontal: 4,
+            borderTopWidth: 1,
+            borderTopColor: Colors.border,
+            paddingTop: 8,
+            paddingBottom: Math.max(insets.bottom, 8),
+            height: 60 + Math.max(insets.bottom, 8),
           },
           tabBarActiveTintColor: Colors.tab.active,
           tabBarInactiveTintColor: Colors.tab.inactive,
           tabBarLabelStyle: {
-            fontSize: 10,
-            fontWeight: '600',
-            letterSpacing: 0.3,
+            fontSize: 11,
+            fontWeight: '500',
             marginTop: 2,
           },
           tabBarIconStyle: {
@@ -57,7 +40,7 @@ export default function TabLayout() {
           options={{
             title: 'Timer',
             tabBarIcon: ({ color, focused }) => (
-              <Ionicons name={focused ? 'time' : 'time-outline'} size={22} color={color} />
+              <Ionicons name={focused ? 'time' : 'time-outline'} size={24} color={color} />
             ),
           }}
         />
@@ -66,7 +49,7 @@ export default function TabLayout() {
           options={{
             title: 'History',
             tabBarIcon: ({ color, focused }) => (
-              <Ionicons name={focused ? 'list' : 'list-outline'} size={22} color={color} />
+              <Ionicons name={focused ? 'list' : 'list-outline'} size={24} color={color} />
             ),
           }}
         />
@@ -77,7 +60,7 @@ export default function TabLayout() {
             tabBarIcon: ({ color, focused }) => (
               <Ionicons
                 name={focused ? 'stats-chart' : 'stats-chart-outline'}
-                size={22}
+                size={24}
                 color={color}
               />
             ),
@@ -88,7 +71,7 @@ export default function TabLayout() {
           options={{
             title: 'Settings',
             tabBarIcon: ({ color, focused }) => (
-              <Ionicons name={focused ? 'settings' : 'settings-outline'} size={22} color={color} />
+              <Ionicons name={focused ? 'settings' : 'settings-outline'} size={24} color={color} />
             ),
           }}
         />

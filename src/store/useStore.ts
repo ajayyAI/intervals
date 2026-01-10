@@ -1,7 +1,10 @@
-import { v4 as uuidv4 } from 'uuid';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import { zustandStorage } from '../services/storage';
+
+const generateId = (): string => {
+  return `${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 11)}`;
+};
 
 // ============ TYPES ============
 
@@ -130,7 +133,7 @@ export const useStore = create<AppState>()(
         const { settings } = get();
         const now = new Date().toISOString();
         const session: Session = {
-          id: uuidv4(),
+          id: generateId(),
           label,
           intervalMinutes: settings.intervalMinutes,
           status: 'active',
@@ -217,7 +220,7 @@ export const useStore = create<AppState>()(
 
         if (note?.trim()) {
           const intervalNote: IntervalNote = {
-            id: uuidv4(),
+            id: generateId(),
             sessionId: activeSession.id,
             note: note.trim(),
             createdAt: new Date().toISOString(),
