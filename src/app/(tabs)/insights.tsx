@@ -1,9 +1,9 @@
+import { Card } from '@/components';
+import { useStore } from '@/store/useStore';
+import { Colors, Layout, Spacing, Typography } from '@/theme';
 import { useMemo } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Card } from '../../components';
-import { useStore } from '../../store/useStore';
-import { Colors, Layout, Spacing, Typography } from '../../theme';
 
 export default function InsightsScreen() {
   const { sessions, notes } = useStore();
@@ -30,7 +30,7 @@ export default function InsightsScreen() {
   }, [sessions, notes]);
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Header */}
         <View style={styles.header}>

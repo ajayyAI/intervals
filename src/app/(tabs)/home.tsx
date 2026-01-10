@@ -1,16 +1,16 @@
-import * as Haptics from 'expo-haptics';
-import { useEffect, useRef, useState } from 'react';
-import { AppState, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Button, CheckInModal, FlipTimer } from '../../components';
-import { useIntervalChime } from '../../services/audio';
+import { Button, CheckInModal, FlipTimer } from '@/components';
+import { useIntervalChime } from '@/services/audio';
 import {
   cancelNotification,
   requestNotificationPermissions,
   scheduleIntervalNotification,
-} from '../../services/notifications';
-import { useStore } from '../../store/useStore';
-import { Colors, Layout, Spacing, Typography } from '../../theme';
+} from '@/services/notifications';
+import { useStore } from '@/store/useStore';
+import { Colors, Layout, Spacing, Typography } from '@/theme';
+import * as Haptics from 'expo-haptics';
+import { useEffect, useRef, useState } from 'react';
+import { AppState, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function HomeScreen() {
   const {
@@ -191,7 +191,7 @@ export default function HomeScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <View style={styles.content}>
         {/* Current Time */}
         <Text style={styles.currentTime}>

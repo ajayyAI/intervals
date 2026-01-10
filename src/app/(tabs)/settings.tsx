@@ -1,11 +1,11 @@
+import { Card } from '@/components';
+import { useStore } from '@/store/useStore';
+import { Colors, Layout, Spacing, Typography } from '@/theme';
 import { Ionicons } from '@expo/vector-icons';
 import Constants from 'expo-constants';
 import * as Haptics from 'expo-haptics';
 import { ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Card } from '../../components';
-import { useStore } from '../../store/useStore';
-import { Colors, Layout, Spacing, Typography } from '../../theme';
 
 const INTERVAL_OPTIONS = [15, 20, 25, 30, 45, 60];
 
@@ -27,7 +27,7 @@ export default function SettingsScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Header */}
         <View style={styles.header}>

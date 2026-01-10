@@ -1,3 +1,5 @@
+import { useStore } from '@/store/useStore';
+import { Colors, Layout, Shadows, Spacing, Typography } from '@/theme';
 import * as Haptics from 'expo-haptics';
 import type React from 'react';
 import {
@@ -7,8 +9,6 @@ import {
   TouchableOpacity,
   type ViewStyle,
 } from 'react-native';
-import { useStore } from '../store/useStore';
-import { Colors, Layout, Shadows, Spacing, Typography } from '../theme';
 
 interface ButtonProps {
   title: string;

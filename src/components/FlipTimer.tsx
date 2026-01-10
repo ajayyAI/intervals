@@ -1,3 +1,4 @@
+import { Colors, Layout, Shadows, Typography } from '@/theme';
 import type React from 'react';
 import { useEffect, useRef } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
@@ -7,7 +8,6 @@ import Animated, {
   withTiming,
   Easing,
 } from 'react-native-reanimated';
-import { Colors, Layout, Shadows, Typography } from '../theme';
 
 interface FlipTimerProps {
   seconds: number;

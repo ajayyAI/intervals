@@ -1,10 +1,10 @@
+import { Card } from '@/components';
+import { type Session, useStore } from '@/store/useStore';
+import { Colors, Layout, Spacing, Typography } from '@/theme';
 import { FlashList } from '@shopify/flash-list';
 import { format, isToday, isYesterday } from 'date-fns';
 import { StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Card } from '../../components';
-import { type Session, useStore } from '../../store/useStore';
-import { Colors, Layout, Spacing, Typography } from '../../theme';
 
 export default function HistoryScreen() {
   const { sessions, notes } = useStore();
@@ -72,7 +72,7 @@ export default function HistoryScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <View style={styles.header}>
         <Text style={styles.title}>History</Text>
         <Text style={styles.subtitle}>{completedSessions.length} sessions</Text>

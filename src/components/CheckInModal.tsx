@@ -1,3 +1,5 @@
+import { useStore } from '@/store/useStore';
+import { Colors, Layout, Spacing, Typography } from '@/theme';
 import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
 import type React from 'react';
@@ -12,8 +14,6 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { useStore } from '../store/useStore';
-import { Colors, Layout, Spacing, Typography } from '../theme';
 import { Button } from './Button';
 import { Card } from './Card';
 
