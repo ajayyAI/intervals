@@ -1,71 +1,66 @@
 name: Android Build
 
 on:
-    pull_request:
-        branches:
-            - main
-    workflow_dispatch:
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
 
 jobs:
-    build:
-        name: Build Android APK
-        runs-on: ubuntu-latest
+  build:
+    name: Build Android APK
+    runs-on: ubuntu-latest
 
-        steps:
-            - name: 🏗 Setup Repo
-              uses: actions/checkout@v4
+    steps:
+      - name: 🏗 Setup Repo
+        uses: actions/checkout@v4
 
-            - name: 🧹 Free Disk Space
-              uses: jlumbroso/free-disk-space@main
-              with:
-                  android: false # Keep Android SDK - we need it!
-                  dotnet: true
-                  haskell: true
-                  large-packages: true
-                  docker-images: true
-                  swap-storage: true
+      - name: 🧹 Free Disk Space
+        uses: jlumbroso/free-disk-space@main
+        with:
+          android: false # Keep Android SDK - we need it!
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: true
+          swap-storage: true
 
-            - name: ☕ Setup Java
-              uses: actions/setup-java@v4
-              with:
-                  distribution: "zulu"
-                  java-version: "17"
+      - name: ☕ Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: "zulu"
+          java-version: "17"
 
-            - name: 📦 Setup PNPM
-              uses: pnpm/action-setup@v4
-              with:
-                  version: 9
+      - name: 📦 Setup PNPM
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
 
-            - name: 🔧 Setup Node
-              uses: actions/setup-node@v4
-              with:
-                  node-version: "20"
-                  cache: "pnpm"
+      - name: 🔧 Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
 
-            - name: 📦 Install Dependencies
-              run: pnpm install --frozen-lockfile
+      - name: 📦 Install Dependencies
+        run: pnpm install --frozen-lockfile
 
-            - name: 🐘 Setup Gradle
-              uses: gradle/actions/setup-gradle@v4
-              with:
-                  cache-read-only: false
+      - name: 🐘 Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-read-only: false
 
-            - name: 🏗 Expo Prebuild
-              run: npx expo prebuild --platform android
-              # env:
-              #   EXPO_PUBLIC_SENTRY_DSN: ${{ secrets.EXPO_PUBLIC_SENTRY_DSN }}
-              #   EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}
-              #   EXPO_PUBLIC_SUPABASE_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_KEY }}
-              #   SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+      - name: 🏗 Expo Prebuild
+        run: npx expo prebuild --platform android --clean
+  
+      - name: 👷 Build APK
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon --parallel --build-cache
 
-            - name: 👷 Build APK
-              run: |
-                  cd android
-                  chmod +x gradlew
-                  ./gradlew assembleDebug --no-daemon --parallel --build-cache
-
-            - name: 📤 Upload Artifact
-              uses: actions/upload-artifact@v4
-              with:
-                  name: app-debug
-                  path: android/app/build/outputs/apk/debug/app-debug.apk
+      - name: 📤 Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-debug
+          path: android/app/build/outputs/apk/debug/app-debug.apk
