@@ -1,190 +1,179 @@
 import { Colors, Shadows } from '@/theme';
 import type React from 'react';
-import { useEffect, useRef } from 'react';
+import { memo, useEffect, useRef } from 'react';
 import { Dimensions, StyleSheet, Text, View } from 'react-native';
 import Animated, {
+  Easing,
   useAnimatedStyle,
   useSharedValue,
+  withSequence,
   withTiming,
-  Easing,
 } from 'react-native-reanimated';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
-// Calculate digit size based on screen width for maximum impact
-const DIGIT_WIDTH = Math.floor((SCREEN_WIDTH - 80) / 4.5);
-const DIGIT_HEIGHT = Math.floor(DIGIT_WIDTH * 1.4);
-const FONT_SIZE = Math.floor(DIGIT_WIDTH * 1.1);
+const CARD_WIDTH = SCREEN_WIDTH - 48;
+const CARD_HEIGHT = Math.min(SCREEN_HEIGHT * 0.26, 200);
+const DIGIT_HEIGHT = CARD_HEIGHT - 12;
+const FONT_SIZE = Math.floor(DIGIT_HEIGHT * 0.75);
 
 interface FlipTimerProps {
   seconds: number;
-  showHours?: boolean;
 }
 
 interface FlipDigitProps {
   digit: string;
-  prevDigit: string;
 }
 
-const FlipDigit: React.FC<FlipDigitProps> = ({ digit, prevDigit }) => {
+const FlipDigit: React.FC<FlipDigitProps> = memo(({ digit }) => {
   const scale = useSharedValue(1);
-  const opacity = useSharedValue(1);
-  const prevDigitRef = useRef(prevDigit);
+  const lastDigit = useRef(digit);
 
   useEffect(() => {
-    if (digit !== prevDigitRef.current) {
-      scale.value = 0.96;
-      opacity.value = 0.7;
-      scale.value = withTiming(1, {
-        duration: 250,
-        easing: Easing.out(Easing.back(1.5)),
-      });
-      opacity.value = withTiming(1, {
-        duration: 200,
-        easing: Easing.out(Easing.cubic),
-      });
-      prevDigitRef.current = digit;
+    if (digit !== lastDigit.current) {
+      scale.value = withSequence(
+        withTiming(0.9, { duration: 80, easing: Easing.out(Easing.ease) }),
+        withTiming(1, { duration: 180, easing: Easing.out(Easing.back(1.3)) })
+      );
+      lastDigit.current = digit;
     }
-  }, [digit, scale, opacity]);
+  }, [digit, scale]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
-    opacity: opacity.value,
   }));
 
   return (
-    <Animated.View style={[styles.digitWrapper, animatedStyle]}>
-      {/* Top half */}
+    <Animated.View style={[styles.digitCard, animatedStyle]}>
+      {/* Top half - clips bottom of text */}
       <View style={styles.halfTop}>
-        <View style={styles.digitInner}>
+        <View style={styles.textContainer}>
           <Text style={styles.digitText}>{digit}</Text>
         </View>
       </View>
-      {/* Bottom half */}
+
+      {/* Divider */}
+      <View style={styles.divider} />
+
+      {/* Bottom half - clips top of text */}
       <View style={styles.halfBottom}>
-        <View style={[styles.digitInner, styles.digitInnerBottom]}>
+        <View style={[styles.textContainer, styles.textContainerBottom]}>
           <Text style={styles.digitText}>{digit}</Text>
         </View>
       </View>
-      {/* Center divider line */}
-      <View style={styles.centerLine} />
     </Animated.View>
   );
-};
+});
 
-interface DigitPairProps {
+interface FlipCardPairProps {
   value: string;
+  label: string;
 }
 
-const DigitPair: React.FC<DigitPairProps> = ({ value }) => {
-  const digits = value.padStart(2, '0');
-  const prevValue = useRef(digits);
-
-  useEffect(() => {
-    prevValue.current = digits;
-  }, [digits]);
+const FlipCardPair: React.FC<FlipCardPairProps> = memo(({ value, label }) => {
+  const d1 = value[0] || '0';
+  const d2 = value[1] || '0';
 
   return (
-    <View style={styles.pairCard}>
-      <FlipDigit digit={digits[0]} prevDigit={prevValue.current[0]} />
-      <View style={styles.digitGap} />
-      <FlipDigit digit={digits[1]} prevDigit={prevValue.current[1]} />
+    <View style={styles.pairContainer}>
+      <Text style={styles.label}>{label}</Text>
+      <View style={styles.pairCard}>
+        <FlipDigit digit={d1} />
+        <View style={styles.digitGap} />
+        <FlipDigit digit={d2} />
+      </View>
     </View>
   );
-};
+});
 
-export const FlipTimer: React.FC<FlipTimerProps> = ({ seconds, showHours = false }) => {
-  const formatTime = (totalSeconds: number) => {
-    const hrs = Math.floor(totalSeconds / 3600);
-    const mins = Math.floor((totalSeconds % 3600) / 60);
-    const secs = totalSeconds % 60;
-    return {
-      hours: hrs.toString().padStart(2, '0'),
-      minutes: mins.toString().padStart(2, '0'),
-      seconds: secs.toString().padStart(2, '0'),
-    };
-  };
-
-  const time = formatTime(Math.max(0, seconds));
-  const displayHours = showHours || Number.parseInt(time.hours) > 0;
+export const FlipTimer: React.FC<FlipTimerProps> = ({ seconds }) => {
+  const mins = Math.floor(Math.max(0, seconds) / 60);
+  const secs = Math.max(0, seconds) % 60;
 
   return (
     <View style={styles.container}>
-      {displayHours && (
-        <>
-          <DigitPair value={time.hours} />
-          <Text style={styles.separator}>:</Text>
-        </>
-      )}
-      <DigitPair value={time.minutes} />
-      <Text style={styles.separator}>:</Text>
-      <DigitPair value={time.seconds} />
+      <FlipCardPair value={mins.toString().padStart(2, '0')} label="MINUTES" />
+      <View style={styles.cardGap} />
+      <FlipCardPair value={secs.toString().padStart(2, '0')} label="SECONDS" />
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    width: '100%',
+  },
+  pairContainer: {
+    width: CARD_WIDTH,
+    alignItems: 'center',
+  },
+  label: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: Colors.text.muted,
+    letterSpacing: 3,
+    marginBottom: 10,
+    opacity: 0.6,
   },
   pairCard: {
     flexDirection: 'row',
-    backgroundColor: Colors.bg.card,
+    width: CARD_WIDTH,
+    height: CARD_HEIGHT,
     borderRadius: 16,
-    padding: 8,
+    backgroundColor: Colors.bg.card,
+    padding: 6,
     ...Shadows.timer,
   },
-  digitGap: {
-    width: 4,
-  },
-  digitWrapper: {
-    width: DIGIT_WIDTH,
+  digitCard: {
+    flex: 1,
     height: DIGIT_HEIGHT,
-    borderRadius: 10,
+    borderRadius: 12,
     overflow: 'hidden',
-    backgroundColor: Colors.bg.elevated,
+  },
+  digitGap: {
+    width: 6,
   },
   halfTop: {
     height: DIGIT_HEIGHT / 2,
-    overflow: 'hidden',
     backgroundColor: Colors.bg.elevated,
+    overflow: 'hidden',
+    borderTopLeftRadius: 12,
+    borderTopRightRadius: 12,
   },
   halfBottom: {
     height: DIGIT_HEIGHT / 2,
-    overflow: 'hidden',
     backgroundColor: '#1a1d24',
+    overflow: 'hidden',
+    borderBottomLeftRadius: 12,
+    borderBottomRightRadius: 12,
   },
-  digitInner: {
+  textContainer: {
     height: DIGIT_HEIGHT,
-    justifyContent: 'center',
+    width: '100%',
     alignItems: 'center',
+    justifyContent: 'center',
   },
-  digitInnerBottom: {
+  textContainerBottom: {
     marginTop: -DIGIT_HEIGHT / 2,
   },
   digitText: {
     fontSize: FONT_SIZE,
-    fontWeight: '600',
+    fontWeight: '700',
     color: Colors.text.primary,
     fontVariant: ['tabular-nums'],
-    letterSpacing: -2,
-    includeFontPadding: false,
+    textAlign: 'center',
   },
-  centerLine: {
+  divider: {
     position: 'absolute',
     left: 0,
     right: 0,
     top: DIGIT_HEIGHT / 2 - 1,
     height: 2,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    zIndex: 10,
   },
-  separator: {
-    fontSize: FONT_SIZE * 0.7,
-    fontWeight: '300',
-    color: Colors.text.muted,
-    marginHorizontal: 6,
-    opacity: 0.6,
+  cardGap: {
+    height: 16,
   },
 });

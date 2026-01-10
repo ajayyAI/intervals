@@ -8,7 +8,6 @@ import {
   KeyboardAvoidingView,
   Modal,
   Platform,
-  Pressable,
   StyleSheet,
   Text,
   TextInput,
@@ -51,30 +50,33 @@ export const CheckInModal: React.FC<CheckInModalProps> = ({
     onTakeBreak();
   };
 
+  // Modal cannot be dismissed by backdrop - user must make a choice
+  // This prevents the bug where modal closes without resuming timer
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.overlay}
       >
-        <Pressable style={styles.backdrop} onPress={onClose}>
-          <BlurView intensity={40} tint="dark" style={StyleSheet.absoluteFill} />
-        </Pressable>
+        <BlurView intensity={40} tint="dark" style={StyleSheet.absoluteFill} />
 
         <View style={styles.modalContent}>
           <Card elevated style={styles.card}>
+            <Text style={styles.emoji}>✨</Text>
             <Text style={styles.title}>Interval Complete</Text>
             <Text style={styles.subtitle}>What did you accomplish?</Text>
 
             <TextInput
               style={styles.input}
-              placeholder="Brief note (optional)"
+              placeholder="Quick note (optional)"
               placeholderTextColor={Colors.text.muted}
               value={note}
               onChangeText={setNote}
               multiline
               numberOfLines={3}
               textAlignVertical="top"
+              returnKeyType="done"
+              blurOnSubmit
             />
 
             <View style={styles.buttonRow}>
@@ -102,16 +104,18 @@ const styles = StyleSheet.create({
   overlay: {
     flex: 1,
     justifyContent: 'center',
-  },
-  backdrop: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
   },
   modalContent: {
     paddingHorizontal: Layout.screenPadding,
   },
   card: {
     padding: Spacing.xl,
+  },
+  emoji: {
+    fontSize: 40,
+    textAlign: 'center',
+    marginBottom: Spacing.md,
   },
   title: {
     ...Typography.h2,
