@@ -1,13 +1,20 @@
-import { Colors, Layout, Shadows, Typography } from '@/theme';
+import { Colors, Shadows } from '@/theme';
 import type React from 'react';
 import { useEffect, useRef } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Dimensions, StyleSheet, Text, View } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withTiming,
   Easing,
 } from 'react-native-reanimated';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+
+// Calculate digit size based on screen width for maximum impact
+const DIGIT_WIDTH = Math.floor((SCREEN_WIDTH - 80) / 4.5);
+const DIGIT_HEIGHT = Math.floor(DIGIT_WIDTH * 1.4);
+const FONT_SIZE = Math.floor(DIGIT_WIDTH * 1.1);
 
 interface FlipTimerProps {
   seconds: number;
@@ -20,39 +27,56 @@ interface FlipDigitProps {
 }
 
 const FlipDigit: React.FC<FlipDigitProps> = ({ digit, prevDigit }) => {
+  const scale = useSharedValue(1);
   const opacity = useSharedValue(1);
   const prevDigitRef = useRef(prevDigit);
 
   useEffect(() => {
     if (digit !== prevDigitRef.current) {
+      scale.value = 0.96;
       opacity.value = 0.7;
+      scale.value = withTiming(1, {
+        duration: 250,
+        easing: Easing.out(Easing.back(1.5)),
+      });
       opacity.value = withTiming(1, {
         duration: 200,
         easing: Easing.out(Easing.cubic),
       });
       prevDigitRef.current = digit;
     }
-  }, [digit, opacity]);
+  }, [digit, scale, opacity]);
 
   const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
     opacity: opacity.value,
   }));
 
   return (
-    <View style={styles.digitContainer}>
-      <Animated.View style={[styles.digitCard, animatedStyle]}>
-        <Text style={styles.digitText}>{digit}</Text>
-      </Animated.View>
-    </View>
+    <Animated.View style={[styles.digitWrapper, animatedStyle]}>
+      {/* Top half */}
+      <View style={styles.halfTop}>
+        <View style={styles.digitInner}>
+          <Text style={styles.digitText}>{digit}</Text>
+        </View>
+      </View>
+      {/* Bottom half */}
+      <View style={styles.halfBottom}>
+        <View style={[styles.digitInner, styles.digitInnerBottom]}>
+          <Text style={styles.digitText}>{digit}</Text>
+        </View>
+      </View>
+      {/* Center divider line */}
+      <View style={styles.centerLine} />
+    </Animated.View>
   );
 };
 
 interface DigitPairProps {
   value: string;
-  label?: string;
 }
 
-const DigitPair: React.FC<DigitPairProps> = ({ value, label }) => {
+const DigitPair: React.FC<DigitPairProps> = ({ value }) => {
   const digits = value.padStart(2, '0');
   const prevValue = useRef(digits);
 
@@ -61,13 +85,10 @@ const DigitPair: React.FC<DigitPairProps> = ({ value, label }) => {
   }, [digits]);
 
   return (
-    <View style={styles.pairContainer}>
-      <View style={styles.pairCard}>
-        <FlipDigit digit={digits[0]} prevDigit={prevValue.current[0]} />
-        <FlipDigit digit={digits[1]} prevDigit={prevValue.current[1]} />
-        <View style={styles.centerDivider} />
-      </View>
-      {label && <Text style={styles.pairLabel}>{label}</Text>}
+    <View style={styles.pairCard}>
+      <FlipDigit digit={digits[0]} prevDigit={prevValue.current[0]} />
+      <View style={styles.digitGap} />
+      <FlipDigit digit={digits[1]} prevDigit={prevValue.current[1]} />
     </View>
   );
 };
@@ -102,63 +123,68 @@ export const FlipTimer: React.FC<FlipTimerProps> = ({ seconds, showHours = false
   );
 };
 
-const DIGIT_WIDTH = 48;
-const DIGIT_HEIGHT = 72;
-
 const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  pairContainer: {
-    alignItems: 'center',
-  },
   pairCard: {
     flexDirection: 'row',
     backgroundColor: Colors.bg.card,
-    borderRadius: Layout.cardRadius,
-    overflow: 'hidden',
+    borderRadius: 16,
+    padding: 8,
     ...Shadows.timer,
   },
-  pairLabel: {
-    ...Typography.labelSmall,
-    color: Colors.text.muted,
-    marginTop: 8,
-    textTransform: 'uppercase',
-    letterSpacing: 1,
+  digitGap: {
+    width: 4,
   },
-  digitContainer: {
+  digitWrapper: {
     width: DIGIT_WIDTH,
     height: DIGIT_HEIGHT,
+    borderRadius: 10,
     overflow: 'hidden',
+    backgroundColor: Colors.bg.elevated,
   },
-  digitCard: {
-    width: '100%',
-    height: '100%',
+  halfTop: {
+    height: DIGIT_HEIGHT / 2,
+    overflow: 'hidden',
+    backgroundColor: Colors.bg.elevated,
+  },
+  halfBottom: {
+    height: DIGIT_HEIGHT / 2,
+    overflow: 'hidden',
+    backgroundColor: '#1a1d24',
+  },
+  digitInner: {
+    height: DIGIT_HEIGHT,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: Colors.bg.card,
+  },
+  digitInnerBottom: {
+    marginTop: -DIGIT_HEIGHT / 2,
   },
   digitText: {
-    ...Typography.countdown,
+    fontSize: FONT_SIZE,
+    fontWeight: '600',
     color: Colors.text.primary,
-    fontSize: 56,
+    fontVariant: ['tabular-nums'],
+    letterSpacing: -2,
+    includeFontPadding: false,
   },
-  centerDivider: {
+  centerLine: {
     position: 'absolute',
     left: 0,
     right: 0,
-    top: '50%',
+    top: DIGIT_HEIGHT / 2 - 1,
     height: 2,
-    backgroundColor: Colors.bg.primary,
-    marginTop: -1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
   },
   separator: {
-    ...Typography.countdown,
-    color: Colors.text.muted,
-    fontSize: 48,
-    marginHorizontal: 8,
+    fontSize: FONT_SIZE * 0.7,
     fontWeight: '300',
+    color: Colors.text.muted,
+    marginHorizontal: 6,
+    opacity: 0.6,
   },
 });

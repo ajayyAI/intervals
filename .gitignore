@@ -41,4 +41,5 @@ app-example
 
 # Native generated directories
 android/
+.metro-cache/
 ios/

@@ -14,9 +14,7 @@
       "bundleIdentifier": "com.intervals.app",
       "buildNumber": "1",
       "infoPlist": {
-        "UIBackgroundModes": [
-          "audio"
-        ]
+        "UIBackgroundModes": ["audio"]
       }
     },
     "android": {
@@ -46,6 +44,13 @@
         }
       ],
       "expo-audio",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/icon.png",
+          "color": "#000000"
+        }
+      ],
       [
         "expo-font",
         {

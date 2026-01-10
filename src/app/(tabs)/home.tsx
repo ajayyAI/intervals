@@ -6,13 +6,14 @@ import {
   scheduleIntervalNotification,
 } from '@/services/notifications';
 import { useStore } from '@/store/useStore';
-import { Colors, Layout, Spacing, Typography } from '@/theme';
+import { Colors, Spacing, Typography } from '@/theme';
 import * as Haptics from 'expo-haptics';
 import { useEffect, useRef, useState } from 'react';
 import { AppState, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function HomeScreen() {
+  const insets = useSafeAreaInsets();
   const {
     activeSession,
     currentLabel,
@@ -45,7 +46,7 @@ export default function HomeScreen() {
   useEffect(() => {
     const clockInterval = setInterval(() => {
       setCurrentTime(new Date());
-    }, 60000); // Update every minute
+    }, 60000);
     return () => clearInterval(clockInterval);
   }, []);
 
@@ -181,16 +182,22 @@ export default function HomeScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
-      <View style={styles.content}>
+    <View style={styles.container}>
+      {/* Top section with current time */}
+      <View style={[styles.topSection, { paddingTop: insets.top + 20 }]}>
         <Text style={styles.currentTime}>
           {currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
         </Text>
+      </View>
 
-        <Pressable onPress={handleTimerPress} onLongPress={activeSession ? handleEnd : undefined}>
-          <View style={styles.timerContainer}>
-            <FlipTimer seconds={activeSession ? timerSeconds : settings.intervalMinutes * 60} />
-          </View>
+      {/* Center section - Timer dominates */}
+      <View style={styles.centerSection}>
+        <Pressable
+          onPress={handleTimerPress}
+          onLongPress={activeSession ? handleEnd : undefined}
+          style={styles.timerPressable}
+        >
+          <FlipTimer seconds={activeSession ? timerSeconds : settings.intervalMinutes * 60} />
         </Pressable>
 
         {activeSession ? (
@@ -203,7 +210,7 @@ export default function HomeScreen() {
           <View style={styles.inputContainer}>
             <TextInput
               style={styles.labelInput}
-              placeholder="Session label"
+              placeholder="What are you focusing on?"
               placeholderTextColor={Colors.text.muted}
               value={currentLabel}
               onChangeText={setCurrentLabel}
@@ -220,27 +227,31 @@ export default function HomeScreen() {
             />
           </View>
         )}
-
-        {activeSession && (
-          <View style={styles.statsRow}>
-            <View style={styles.statItem}>
-              <Text style={styles.statValue}>{activeSession.intervalsCompleted}</Text>
-              <Text style={styles.statLabel}>Intervals</Text>
-            </View>
-            <View style={styles.statItem}>
-              <Text style={styles.statValue}>{Math.floor(localElapsed / 60)}m</Text>
-              <Text style={styles.statLabel}>Focus Time</Text>
-            </View>
-          </View>
-        )}
       </View>
 
-      {activeSession && (
-        <View style={styles.hintsContainer}>
-          <Text style={styles.hint}>Tap to {isTimerRunning ? 'pause' : 'resume'}</Text>
-          <Text style={styles.hint}>Hold to end</Text>
-        </View>
-      )}
+      {/* Bottom section - Stats and hints */}
+      <View style={styles.bottomSection}>
+        {activeSession && (
+          <>
+            <View style={styles.statsRow}>
+              <View style={styles.statItem}>
+                <Text style={styles.statValue}>{activeSession.intervalsCompleted}</Text>
+                <Text style={styles.statLabel}>Intervals</Text>
+              </View>
+              <View style={styles.statDivider} />
+              <View style={styles.statItem}>
+                <Text style={styles.statValue}>{Math.floor(localElapsed / 60)}m</Text>
+                <Text style={styles.statLabel}>Focus Time</Text>
+              </View>
+            </View>
+            <View style={styles.hintsContainer}>
+              <Text style={styles.hint}>Tap to {isTimerRunning ? 'pause' : 'resume'}</Text>
+              <Text style={styles.hintDot}>·</Text>
+              <Text style={styles.hint}>Hold to end</Text>
+            </View>
+          </>
+        )}
+      </View>
 
       <CheckInModal
         visible={isCheckInModalVisible}
@@ -248,7 +259,7 @@ export default function HomeScreen() {
         onContinue={handleCheckInContinue}
         onTakeBreak={handleCheckInBreak}
       />
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -257,81 +268,117 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.bg.primary,
   },
-  content: {
-    flex: 1,
-    paddingHorizontal: Layout.screenPadding,
+  topSection: {
     alignItems: 'center',
-    justifyContent: 'center',
+    paddingBottom: Spacing.lg,
   },
   currentTime: {
-    ...Typography.labelSmall,
+    fontSize: 14,
+    fontWeight: '500',
     color: Colors.text.muted,
-    letterSpacing: 2,
-    marginBottom: Spacing.xxl,
+    letterSpacing: 3,
+    textTransform: 'uppercase',
   },
-  timerContainer: {
-    marginVertical: Spacing.xl,
+  centerSection: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  timerPressable: {
+    alignItems: 'center',
   },
   statusContainer: {
     alignItems: 'center',
-    marginTop: Spacing.xl,
+    marginTop: Spacing.xxl,
   },
   statusLabel: {
-    ...Typography.labelUppercase,
+    fontSize: 11,
+    fontWeight: '600',
     color: Colors.text.muted,
+    letterSpacing: 3,
     marginBottom: Spacing.xs,
   },
   nextChime: {
-    ...Typography.interval,
+    fontSize: 28,
+    fontWeight: '500',
     color: Colors.text.secondary,
+    fontVariant: ['tabular-nums'],
+    letterSpacing: -0.5,
   },
   sessionLabel: {
     ...Typography.body,
     color: Colors.text.secondary,
     marginTop: Spacing.md,
+    opacity: 0.8,
   },
   inputContainer: {
     width: '100%',
+    maxWidth: 320,
     marginTop: Spacing.xxl,
     gap: Spacing.md,
   },
   labelInput: {
     backgroundColor: Colors.bg.card,
-    borderRadius: Layout.inputRadius,
-    padding: Spacing.md,
-    paddingHorizontal: Spacing.lg,
-    ...Typography.body,
+    borderRadius: 16,
+    paddingVertical: 18,
+    paddingHorizontal: 24,
+    fontSize: 16,
     color: Colors.text.primary,
     textAlign: 'center',
   },
   startButton: {
     width: '100%',
   },
+  bottomSection: {
+    paddingHorizontal: 20,
+    paddingBottom: 24,
+    minHeight: 100,
+  },
   statsRow: {
     flexDirection: 'row',
-    gap: Spacing.xxl,
-    marginTop: Spacing.xxl,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: Spacing.xl,
+    marginBottom: Spacing.lg,
   },
   statItem: {
     alignItems: 'center',
+    minWidth: 80,
+  },
+  statDivider: {
+    width: 1,
+    height: 32,
+    backgroundColor: Colors.border,
   },
   statValue: {
-    ...Typography.interval,
+    fontSize: 28,
+    fontWeight: '600',
     color: Colors.text.primary,
+    fontVariant: ['tabular-nums'],
   },
   statLabel: {
-    ...Typography.labelSmall,
+    fontSize: 11,
+    fontWeight: '500',
     color: Colors.text.muted,
-    marginTop: Spacing.xs,
+    letterSpacing: 1,
+    marginTop: 4,
+    textTransform: 'uppercase',
   },
   hintsContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
-    gap: Spacing.xl,
-    paddingBottom: Spacing.xl,
+    alignItems: 'center',
+    gap: 8,
   },
   hint: {
-    ...Typography.caption,
+    fontSize: 12,
     color: Colors.text.muted,
+    opacity: 0.6,
+  },
+  hintDot: {
+    fontSize: 12,
+    color: Colors.text.muted,
+    opacity: 0.4,
   },
 });

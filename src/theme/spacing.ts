@@ -50,10 +50,10 @@ export const Shadows = {
   },
   timer: {
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.5,
-    shadowRadius: 32,
-    elevation: 12,
+    shadowOffset: { width: 0, height: 20 },
+    shadowOpacity: 0.6,
+    shadowRadius: 40,
+    elevation: 16,
   },
   subtle: {
     shadowColor: '#000',
