@@ -83,6 +83,15 @@
           }
         }
       ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "enableProguardInReleaseBuilds": true,
+            "enableShrinkResourcesInReleaseBuilds": true
+          }
+        }
+      ],
       "expo-web-browser"
     ],
     "experiments": {
