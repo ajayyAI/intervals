@@ -68,7 +68,6 @@ export default function SettingsScreen() {
   const handleSoundSelect = (soundId: SoundName) => {
     haptics.selection();
     updateSettings({ selectedSound: soundId });
-    // Preview always plays on selection (regardless of sound toggle)
     playSound(soundId);
   };
 

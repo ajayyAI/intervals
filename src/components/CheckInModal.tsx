@@ -1,4 +1,3 @@
-import { useHaptics } from '@/hooks/useHaptics';
 import { useStore } from '@/store/useStore';
 import { Colors, Layout, Spacing, Typography } from '@/theme';
 import { BlurView } from 'expo-blur';
@@ -31,24 +30,19 @@ export const CheckInModal: React.FC<CheckInModalProps> = ({
 }) => {
   const { submitCheckIn } = useStore();
   const [note, setNote] = useState('');
-  const haptics = useHaptics();
 
   const handleContinue = () => {
-    haptics.notification('success');
     submitCheckIn(note);
     setNote('');
     onContinue();
   };
 
   const handleTakeBreak = () => {
-    haptics.impact('medium');
     submitCheckIn(note);
     setNote('');
     onTakeBreak();
   };
 
-  // Modal cannot be dismissed by backdrop - user must make a choice
-  // This prevents the bug where modal closes without resuming timer
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <KeyboardAvoidingView
@@ -82,14 +76,12 @@ export const CheckInModal: React.FC<CheckInModalProps> = ({
                 onPress={handleTakeBreak}
                 variant="ghost"
                 style={styles.button}
-                noHaptic
               />
               <Button
                 title="Continue"
                 onPress={handleContinue}
                 variant="primary"
                 style={styles.button}
-                noHaptic
               />
             </View>
           </Card>

@@ -63,7 +63,7 @@ export default function HomeScreen() {
         timerRef.current = null;
       }
 
-      haptics.notification('warning');
+      haptics.notification('success');
 
       if (settings.soundEnabled) {
         playChime();
@@ -81,7 +81,6 @@ export default function HomeScreen() {
     isTimerRunning,
     timerSeconds,
     activeSession,
-    settings.hapticEnabled,
     settings.soundEnabled,
     playChime,
     completeInterval,
@@ -214,6 +213,7 @@ export default function HomeScreen() {
               variant="primary"
               size="large"
               style={styles.startButton}
+              noHaptic
             />
           </View>
         )}

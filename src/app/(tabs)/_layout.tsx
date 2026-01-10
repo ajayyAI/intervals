@@ -14,7 +14,6 @@ export default function TabLayout() {
       <Tabs
         screenListeners={{
           tabPress: () => {
-            // Provide subtle haptic feedback on tab switch (iOS standard)
             haptics.selection();
           },
         }}
