@@ -1,6 +1,3 @@
-// Premium Interval Timer - Spacing & Layout System
-// Generous breathing room for luxury feel
-
 export const Spacing = {
   xs: 4,
   sm: 8,
@@ -36,7 +33,6 @@ export const Layout = {
   sectionSpacing: 40,
 };
 
-// Subtle shadows for depth without heaviness
 export const Shadows = {
   card: {
     shadowColor: '#000',

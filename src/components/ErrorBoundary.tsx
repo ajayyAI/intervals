@@ -1,5 +1,3 @@
-// Premium Interval Timer - Error Boundary
-// Catches render errors gracefully with premium UI
 import { Component, type ErrorInfo, type ReactNode } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Colors, Layout, Spacing, Typography } from '../theme';

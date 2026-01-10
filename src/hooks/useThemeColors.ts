@@ -1,5 +1,3 @@
-// Premium Interval Timer - Theme Colors Hook
-// Dark-only theme for ultra-luxury experience
 import { Colors } from '../theme';
 
 export const useColors = () => Colors;

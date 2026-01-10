@@ -43,7 +43,6 @@ export default function HomeScreen() {
     settings.selectedSound as 'glass' | 'wood' | 'bell' | 'chime' | 'bowl'
   );
 
-  // Live clock update every minute
   useEffect(() => {
     const clockInterval = setInterval(() => {
       setCurrentTime(new Date());

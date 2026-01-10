@@ -1,5 +1,3 @@
-// Premium Interval Timer - Typography System
-// Modern high-end sans with tabular numerals
 import { Platform } from 'react-native';
 
 // Font family selection
@@ -62,7 +60,7 @@ export const FontWeights = {
   semibold: '600' as const,
 };
 
-// Letter spacing for premium feel
+// Letter spacing
 export const LetterSpacing = {
   tight: -2, // For large countdown
   normal: -0.5, // For titles

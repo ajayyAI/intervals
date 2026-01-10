@@ -1,5 +1,3 @@
-// Premium Interval Timer - Notification Service
-// Handles background timer notifications
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 

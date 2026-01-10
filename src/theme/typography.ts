@@ -1,5 +1,3 @@
-// Premium Interval Timer - Typography Styles
-// Pre-composed text styles for consistent usage
 import type { TextStyle } from 'react-native';
 import { FontSizes, FontWeights, Fonts, LetterSpacing } from './font';
 
