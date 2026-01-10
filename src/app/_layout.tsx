@@ -5,7 +5,6 @@ import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
-import { Platform } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
@@ -14,29 +13,37 @@ SplashScreen.preventAutoHideAsync();
 export default function RootLayout() {
   const [appIsReady, setAppIsReady] = useState(false);
 
-  // Web-only font loading (native uses config plugin)
-  const [fontsLoaded, fontError] = useFonts(
-    Platform.OS === 'web'
-      ? {
-          'SF Pro Display': require('../../assets/fonts/SFProDisplay-Regular.otf'),
-          'SFProDisplay-Regular': require('../../assets/fonts/SFProDisplay-Regular.otf'),
-          'SFProDisplay-Medium': require('../../assets/fonts/SFProDisplay-Medium.otf'),
-          'SFProDisplay-Bold': require('../../assets/fonts/SFProDisplay-Bold.otf'),
-        }
-      : {}
-  );
-
-  const isNative = Platform.OS !== 'web';
-  const fontsReady = isNative || fontsLoaded || fontError;
+  // Load fonts - on native, expo-font plugin preloads them but we still need to call useFonts
+  const [fontsLoaded, fontError] = useFonts({
+    'SFProDisplay-Regular': require('../../assets/fonts/SFProDisplay-Regular.otf'),
+    'SFProDisplay-Medium': require('../../assets/fonts/SFProDisplay-Medium.otf'),
+    'SFProDisplay-Bold': require('../../assets/fonts/SFProDisplay-Bold.otf'),
+  });
 
   useEffect(() => {
     async function prepare() {
-      if (!fontsReady) return;
-      setAppIsReady(true);
-      await SplashScreen.hideAsync();
+      try {
+        // Wait for fonts to load (or error)
+        if (!fontsLoaded && !fontError) return;
+
+        // Log any font errors for debugging
+        if (fontError) {
+          console.warn('Font loading error:', fontError);
+        }
+      } catch (e) {
+        console.warn('Error during app preparation:', e);
+      } finally {
+        setAppIsReady(true);
+      }
     }
     prepare();
-  }, [fontsReady]);
+  }, [fontsLoaded, fontError]);
+
+  useEffect(() => {
+    if (appIsReady) {
+      SplashScreen.hideAsync();
+    }
+  }, [appIsReady]);
 
   if (!appIsReady) {
     return null;
