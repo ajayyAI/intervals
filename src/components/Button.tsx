@@ -1,6 +1,5 @@
-import { useStore } from '@/store/useStore';
+import { useHaptics } from '@/hooks/useHaptics';
 import { Colors, Layout, Shadows, Spacing, Typography } from '@/theme';
-import * as Haptics from 'expo-haptics';
 import type React from 'react';
 import {
   ActivityIndicator,
@@ -19,6 +18,7 @@ interface ButtonProps {
   loading?: boolean;
   style?: ViewStyle;
   icon?: React.ReactNode;
+  noHaptic?: boolean;
 }
 
 export const Button: React.FC<ButtonProps> = ({
@@ -30,16 +30,17 @@ export const Button: React.FC<ButtonProps> = ({
   loading = false,
   style,
   icon,
+  noHaptic = false,
 }) => {
-  const { settings } = useStore();
+  const haptics = useHaptics();
 
-  const handlePress = async () => {
-    if (!disabled && !loading) {
-      if (settings?.hapticEnabled) {
-        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-      }
-      onPress();
+  const handlePress = () => {
+    if (disabled || loading) return;
+
+    if (!noHaptic) {
+      haptics.impact('medium');
     }
+    onPress();
   };
 
   const getBackgroundColor = () => {

@@ -1,3 +1,4 @@
+import { useStore } from '@/store/useStore';
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 
@@ -8,25 +9,30 @@ const setupNotificationHandler = () => {
 
   try {
     Notifications.setNotificationHandler({
-      handleNotification: async () => ({
-        shouldShowAlert: true,
-        shouldPlaySound: true,
-        shouldSetBadge: false,
-        shouldShowBanner: true,
-        shouldShowList: true,
-      }),
+      handleNotification: async () => {
+        const state = useStore.getState();
+        const shouldShow = state?.settings?.notificationsEnabled ?? false;
+
+        return {
+          shouldShowAlert: shouldShow,
+          shouldPlaySound: shouldShow,
+          shouldSetBadge: false,
+          shouldShowBanner: shouldShow,
+          shouldShowList: shouldShow,
+        };
+      },
     });
     isNotificationHandlerSet = true;
-  } catch (error) {
-    console.warn('Failed to set notification handler:', error);
+  } catch {
+    // Handler setup failed
   }
 };
 
 export const requestNotificationPermissions = async (): Promise<boolean> => {
   try {
     setupNotificationHandler();
-    const { status: existingStatus } = await Notifications.getPermissionsAsync();
 
+    const { status: existingStatus } = await Notifications.getPermissionsAsync();
     let finalStatus = existingStatus;
 
     if (existingStatus !== 'granted') {
@@ -41,15 +47,26 @@ export const requestNotificationPermissions = async (): Promise<boolean> => {
     if (Platform.OS === 'android') {
       await Notifications.setNotificationChannelAsync('intervals', {
         name: 'Interval Alerts',
+        description: 'Notifications for completed focus intervals',
         importance: Notifications.AndroidImportance.HIGH,
         vibrationPattern: [0, 250, 250, 250],
         sound: 'default',
+        enableVibrate: true,
+        enableLights: true,
       });
     }
 
     return true;
-  } catch (error) {
-    console.warn('Failed to request notification permissions:', error);
+  } catch {
+    return false;
+  }
+};
+
+export const checkNotificationPermissions = async (): Promise<boolean> => {
+  try {
+    const { status } = await Notifications.getPermissionsAsync();
+    return status === 'granted';
+  } catch {
     return false;
   }
 };
@@ -59,7 +76,17 @@ export const scheduleIntervalNotification = async (
   sessionLabel: string
 ): Promise<string | null> => {
   try {
+    const { settings } = useStore.getState();
+    if (!settings?.notificationsEnabled) {
+      return null;
+    }
+
     setupNotificationHandler();
+
+    if (intervalSeconds <= 0) {
+      return null;
+    }
+
     const identifier = await Notifications.scheduleNotificationAsync({
       content: {
         title: 'Interval Complete ✨',
@@ -70,29 +97,31 @@ export const scheduleIntervalNotification = async (
       trigger: {
         type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
         seconds: intervalSeconds,
+        channelId: Platform.OS === 'android' ? 'intervals' : undefined,
       },
     });
 
     return identifier;
-  } catch (error) {
-    console.warn('Failed to schedule notification:', error);
+  } catch {
     return null;
   }
 };
 
 export const cancelNotification = async (identifier: string): Promise<void> => {
   try {
-    await Notifications.cancelScheduledNotificationAsync(identifier);
-  } catch (error) {
-    console.warn('Failed to cancel notification:', error);
+    if (identifier) {
+      await Notifications.cancelScheduledNotificationAsync(identifier);
+    }
+  } catch {
+    // Notification may have already fired
   }
 };
 
 export const cancelAllNotifications = async (): Promise<void> => {
   try {
     await Notifications.cancelAllScheduledNotificationsAsync();
-  } catch (error) {
-    console.warn('Failed to cancel all notifications:', error);
+  } catch {
+    // Best effort
   }
 };
 
@@ -100,4 +129,10 @@ export const addNotificationResponseListener = (
   callback: (response: Notifications.NotificationResponse) => void
 ) => {
   return Notifications.addNotificationResponseReceivedListener(callback);
+};
+
+export const addNotificationReceivedListener = (
+  callback: (notification: Notifications.Notification) => void
+) => {
+  return Notifications.addNotificationReceivedListener(callback);
 };

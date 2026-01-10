@@ -1,7 +1,7 @@
+import { useHaptics } from '@/hooks/useHaptics';
 import { useStore } from '@/store/useStore';
 import { Colors, Layout, Spacing, Typography } from '@/theme';
 import { BlurView } from 'expo-blur';
-import * as Haptics from 'expo-haptics';
 import type React from 'react';
 import { useState } from 'react';
 import {
@@ -29,22 +29,19 @@ export const CheckInModal: React.FC<CheckInModalProps> = ({
   onContinue,
   onTakeBreak,
 }) => {
-  const { submitCheckIn, settings } = useStore();
+  const { submitCheckIn } = useStore();
   const [note, setNote] = useState('');
+  const haptics = useHaptics();
 
-  const handleContinue = async () => {
-    if (settings?.hapticEnabled) {
-      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    }
+  const handleContinue = () => {
+    haptics.notification('success');
     submitCheckIn(note);
     setNote('');
     onContinue();
   };
 
-  const handleTakeBreak = async () => {
-    if (settings?.hapticEnabled) {
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    }
+  const handleTakeBreak = () => {
+    haptics.impact('medium');
     submitCheckIn(note);
     setNote('');
     onTakeBreak();
@@ -76,7 +73,7 @@ export const CheckInModal: React.FC<CheckInModalProps> = ({
               numberOfLines={3}
               textAlignVertical="top"
               returnKeyType="done"
-              blurOnSubmit
+              submitBehavior="blurAndSubmit"
             />
 
             <View style={styles.buttonRow}>
@@ -85,12 +82,14 @@ export const CheckInModal: React.FC<CheckInModalProps> = ({
                 onPress={handleTakeBreak}
                 variant="ghost"
                 style={styles.button}
+                noHaptic
               />
               <Button
                 title="Continue"
                 onPress={handleContinue}
                 variant="primary"
                 style={styles.button}
+                noHaptic
               />
             </View>
           </Card>

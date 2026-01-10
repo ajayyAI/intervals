@@ -1,5 +1,6 @@
 import { Button, CheckInModal, FlipTimer } from '@/components';
-import { useIntervalChime } from '@/services/audio';
+import { useHaptics } from '@/hooks/useHaptics';
+import { useIntervalChime } from '@/hooks/useSounds';
 import {
   cancelAllNotifications,
   cancelNotification,
@@ -8,7 +9,6 @@ import {
 } from '@/services/notifications';
 import { useStore } from '@/store/useStore';
 import { Colors, Spacing } from '@/theme';
-import * as Haptics from 'expo-haptics';
 import { useEffect, useRef, useState } from 'react';
 import { AppState, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -36,25 +36,21 @@ export default function HomeScreen() {
   const appState = useRef(AppState.currentState);
   const [localElapsed, setLocalElapsed] = useState(0);
 
-  const { playChime } = useIntervalChime(
-    settings.selectedSound as 'glass' | 'wood' | 'bell' | 'chime' | 'bowl'
-  );
+  const haptics = useHaptics();
+  const { play: playChime } = useIntervalChime();
 
-  // Request notification permissions on mount if enabled
   useEffect(() => {
     if (settings.notificationsEnabled) {
       requestNotificationPermissions();
     }
   }, [settings.notificationsEnabled]);
 
-  // Clean up orphaned notifications on app launch
   useEffect(() => {
     if (!activeSession) {
       cancelAllNotifications();
     }
   }, []);
 
-  // Timer logic
   useEffect(() => {
     if (isTimerRunning && timerSeconds > 0) {
       timerRef.current = setInterval(() => {
@@ -67,9 +63,8 @@ export default function HomeScreen() {
         timerRef.current = null;
       }
 
-      if (settings.hapticEnabled) {
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-      }
+      haptics.notification('warning');
+
       if (settings.soundEnabled) {
         playChime();
       }
@@ -91,12 +86,11 @@ export default function HomeScreen() {
     playChime,
     completeInterval,
     setTimerSeconds,
+    haptics,
   ]);
 
-  // Handle app state changes for background/foreground sync
   useEffect(() => {
     const subscription = AppState.addEventListener('change', async (nextState) => {
-      // Coming back to foreground - sync timer
       if (appState.current.match(/inactive|background/) && nextState === 'active') {
         if (isTimerRunning && startTimeRef.current > 0) {
           const elapsed = Math.floor((Date.now() - startTimeRef.current) / 1000);
@@ -105,7 +99,6 @@ export default function HomeScreen() {
         }
       }
 
-      // Going to background - cancel notifications if no active session
       if (nextState === 'background' && !activeSession) {
         await cancelAllNotifications();
       }
@@ -117,9 +110,7 @@ export default function HomeScreen() {
   }, [isTimerRunning, settings.intervalMinutes, setTimerSeconds, activeSession]);
 
   const handleStart = async () => {
-    if (settings.hapticEnabled) {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-    }
+    haptics.impact('heavy');
 
     if (settings.notificationsEnabled) {
       const intervalSeconds = settings.intervalMinutes * 60;
@@ -137,9 +128,7 @@ export default function HomeScreen() {
   const handleTimerPress = async () => {
     if (!activeSession) return;
 
-    if (settings.hapticEnabled) {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
+    haptics.impact('light');
 
     if (isTimerRunning) {
       if (notificationIdRef.current) {
@@ -160,9 +149,7 @@ export default function HomeScreen() {
   };
 
   const handleEnd = async () => {
-    if (settings.hapticEnabled) {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-    }
+    haptics.impact('heavy');
 
     if (notificationIdRef.current) {
       await cancelNotification(notificationIdRef.current);
@@ -200,7 +187,6 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Minimal top section */}
       <View style={[styles.topSection, { paddingTop: insets.top + 16 }]}>
         {activeSession && (
           <View style={styles.sessionInfo}>
@@ -210,7 +196,6 @@ export default function HomeScreen() {
         )}
       </View>
 
-      {/* Center - Timer dominates */}
       <View style={styles.centerSection}>
         <Pressable
           onPress={activeSession ? handleTimerPress : undefined}
@@ -234,7 +219,6 @@ export default function HomeScreen() {
         )}
       </View>
 
-      {/* Minimal bottom section */}
       <View style={[styles.bottomSection, { paddingBottom: bottomPadding }]}>
         {activeSession && (
           <Text style={styles.statusHint}>

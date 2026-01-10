@@ -1,71 +1,75 @@
 import { Card } from '@/components';
+import { useHaptics } from '@/hooks/useHaptics';
+import { useSoundPreview } from '@/hooks/useSounds';
 import { AVAILABLE_SOUNDS, type SoundName } from '@/services/audio';
+import { requestNotificationPermissions } from '@/services/notifications';
 import { useStore } from '@/store/useStore';
 import { Colors, Layout, Spacing, Typography } from '@/theme';
 import { Ionicons } from '@expo/vector-icons';
-import { useAudioPlayer } from 'expo-audio';
 import Constants from 'expo-constants';
-import * as Haptics from 'expo-haptics';
-import { ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
+import {
+  Alert,
+  Linking,
+  ScrollView,
+  StyleSheet,
+  Switch,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const INTERVAL_OPTIONS = [15, 20, 25, 30, 45, 60];
-
-// Sound sources for preview
-const SOUND_SOURCES: Record<SoundName, number> = {
-  glass: require('../../assets/sounds/glass.mp3'),
-  wood: require('../../assets/sounds/wood.mp3'),
-  bell: require('../../assets/sounds/bell.mp3'),
-  chime: require('../../assets/sounds/chime.mp3'),
-  bowl: require('../../assets/sounds/bowl.mp3'),
-};
 
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
   const { settings, updateSettings } = useStore();
   const bottomPadding = Math.max(insets.bottom, 16) + 64 + 24;
 
-  // Audio players for each sound (for preview)
-  const glassPlayer = useAudioPlayer(SOUND_SOURCES.glass);
-  const woodPlayer = useAudioPlayer(SOUND_SOURCES.wood);
-  const bellPlayer = useAudioPlayer(SOUND_SOURCES.bell);
-  const chimePlayer = useAudioPlayer(SOUND_SOURCES.chime);
-  const bowlPlayer = useAudioPlayer(SOUND_SOURCES.bowl);
+  const haptics = useHaptics();
+  const { playSound } = useSoundPreview();
 
-  const players: Record<SoundName, ReturnType<typeof useAudioPlayer>> = {
-    glass: glassPlayer,
-    wood: woodPlayer,
-    bell: bellPlayer,
-    chime: chimePlayer,
-    bowl: bowlPlayer,
-  };
-
-  const handleIntervalChange = async (minutes: number) => {
-    if (settings.hapticEnabled) {
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
+  const handleIntervalChange = (minutes: number) => {
+    haptics.selection();
     updateSettings({ intervalMinutes: minutes });
   };
 
-  const handleToggle = async (key: keyof typeof settings, value: boolean) => {
-    if (key !== 'hapticEnabled' && settings.hapticEnabled) {
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
-    updateSettings({ [key]: value });
+  const handleHapticToggle = (value: boolean) => {
+    haptics.impact('light', true);
+    updateSettings({ hapticEnabled: value });
   };
 
-  const handleSoundSelect = async (soundId: SoundName) => {
-    if (settings.hapticEnabled) {
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
-    updateSettings({ selectedSound: soundId });
+  const handleSoundToggle = (value: boolean) => {
+    haptics.impact('light');
+    updateSettings({ soundEnabled: value });
+  };
 
-    // Preview the sound
-    const player = players[soundId];
-    if (player) {
-      player.seekTo(0);
-      player.play();
+  const handleNotificationToggle = async (value: boolean) => {
+    haptics.impact('light');
+
+    if (value) {
+      const granted = await requestNotificationPermissions();
+      if (!granted) {
+        Alert.alert(
+          'Notifications Disabled',
+          'Please enable notifications in your device settings to receive interval alerts.',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Open Settings', onPress: () => Linking.openSettings() },
+          ]
+        );
+        return;
+      }
     }
+
+    updateSettings({ notificationsEnabled: value });
+  };
+
+  const handleSoundSelect = (soundId: SoundName) => {
+    haptics.selection();
+    updateSettings({ selectedSound: soundId });
+    // Preview always plays on selection (regardless of sound toggle)
+    playSound(soundId);
   };
 
   return (
@@ -132,7 +136,7 @@ export default function SettingsScreen() {
             </View>
             <Switch
               value={settings.soundEnabled}
-              onValueChange={(v) => handleToggle('soundEnabled', v)}
+              onValueChange={handleSoundToggle}
               trackColor={{ false: Colors.bg.elevated, true: Colors.text.muted }}
               thumbColor={settings.soundEnabled ? Colors.text.primary : Colors.text.secondary}
             />
@@ -172,7 +176,7 @@ export default function SettingsScreen() {
             </View>
             <Switch
               value={settings.hapticEnabled}
-              onValueChange={(v) => handleToggle('hapticEnabled', v)}
+              onValueChange={handleHapticToggle}
               trackColor={{ false: Colors.bg.elevated, true: Colors.text.muted }}
               thumbColor={settings.hapticEnabled ? Colors.text.primary : Colors.text.secondary}
             />
@@ -187,7 +191,7 @@ export default function SettingsScreen() {
             </View>
             <Switch
               value={settings.notificationsEnabled}
-              onValueChange={(v) => handleToggle('notificationsEnabled', v)}
+              onValueChange={handleNotificationToggle}
               trackColor={{ false: Colors.bg.elevated, true: Colors.text.muted }}
               thumbColor={
                 settings.notificationsEnabled ? Colors.text.primary : Colors.text.secondary
@@ -205,7 +209,7 @@ export default function SettingsScreen() {
           <Text style={styles.versionText}>
             Intervals v{Constants.expoConfig?.version ?? '1.0.0'}
           </Text>
-          <Text style={styles.tagline}>A premium interval focus system</Text>
+          <Text style={styles.tagline}>An interval focus system</Text>
         </Card>
       </ScrollView>
     </View>

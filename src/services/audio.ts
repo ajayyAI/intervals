@@ -1,8 +1,6 @@
-import { useAudioPlayer } from 'expo-audio';
-
 export type SoundName = 'glass' | 'wood' | 'bell' | 'chime' | 'bowl';
 
-const SOUND_SOURCES: Record<SoundName, number> = {
+export const SOUND_SOURCES: Record<SoundName, number> = {
   glass: require('../assets/sounds/glass.mp3'),
   wood: require('../assets/sounds/wood.mp3'),
   bell: require('../assets/sounds/bell.mp3'),
@@ -17,26 +15,6 @@ export const AVAILABLE_SOUNDS: { id: SoundName; label: string }[] = [
   { id: 'chime', label: 'Chime' },
   { id: 'bowl', label: 'Singing Bowl' },
 ];
-
-/**
- * Hook to get an audio player for the interval chime
- * Uses the new expo-audio useAudioPlayer hook
- */
-export const useIntervalChime = (soundName: SoundName = 'glass') => {
-  const source = SOUND_SOURCES[soundName];
-
-  // useAudioPlayer handles lifecycle automatically
-  const player = useAudioPlayer(source);
-
-  const playChime = () => {
-    if (player) {
-      player.seekTo(0);
-      player.play();
-    }
-  };
-
-  return { playChime, isReady: true };
-};
 
 /**
  * Get sound label for display

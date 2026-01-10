@@ -1,3 +1,4 @@
+import { useHaptics } from '@/hooks/useHaptics';
 import { Colors } from '@/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
@@ -6,10 +7,17 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function TabLayout() {
   const insets = useSafeAreaInsets();
+  const haptics = useHaptics();
 
   return (
     <View style={styles.container}>
       <Tabs
+        screenListeners={{
+          tabPress: () => {
+            // Provide subtle haptic feedback on tab switch (iOS standard)
+            haptics.selection();
+          },
+        }}
         screenOptions={{
           headerShown: false,
           tabBarStyle: {
