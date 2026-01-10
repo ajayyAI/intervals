@@ -26,17 +26,17 @@ export default function RootLayout() {
       : {}
   );
 
+  const isNative = Platform.OS !== 'web';
+  const fontsReady = isNative || fontsLoaded || fontError;
+
   useEffect(() => {
     async function prepare() {
-      // Wait for web fonts
-      if (Platform.OS === 'web' && !fontsLoaded && !fontError) {
-        return;
-      }
+      if (!fontsReady) return;
       setAppIsReady(true);
       await SplashScreen.hideAsync();
     }
     prepare();
-  }, [fontsLoaded, fontError]);
+  }, [fontsReady]);
 
   if (!appIsReady) {
     return null;
