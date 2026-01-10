@@ -3,6 +3,7 @@
     "name": "Intervals",
     "slug": "intervals",
     "version": "1.0.0",
+    "description": "A beautiful interval timer for workouts, meditation, and productivity",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "intervals",
@@ -11,6 +12,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.intervals.app",
+      "buildNumber": "1",
       "infoPlist": {
         "UIBackgroundModes": ["audio"]
       }
@@ -21,7 +23,9 @@
         "backgroundColor": "#000000"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.intervals.app"
+      "package": "com.intervals.app",
+      "versionCode": 1,
+      "permissions": []
     },
     "web": {
       "bundler": "metro",
