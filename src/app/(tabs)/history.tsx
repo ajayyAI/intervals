@@ -92,7 +92,7 @@ export default function HistoryScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
+      <View style={[styles.header, { paddingTop: insets.top + 32 }]}>
         <Text style={styles.title}>History</Text>
         <Text style={styles.subtitle}>{completedSessions.length} sessions</Text>
       </View>
@@ -126,7 +126,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: Layout.screenPadding,
     paddingBottom: Spacing.lg,
     flexDirection: 'row',
-    alignItems: 'baseline',
+    alignItems: 'center',
     justifyContent: 'space-between',
   },
   title: {

@@ -19,9 +19,8 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-const INTERVAL_OPTIONS = [1, 15, 20, 25, 30, 45, 60];
+const INTERVAL_OPTIONS = [5, 15, 20, 25, 30, 45, 60];
 
-// Projects Section Component
 const ProjectsSection = () => {
   const { projects } = useStore();
   const router = useRouter();
@@ -104,7 +103,7 @@ export default function SettingsScreen() {
   return (
     <View style={styles.container}>
       {/* Header */}
-      <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
+      <View style={[styles.header, { paddingTop: insets.top + 32 }]}>
         <Text style={styles.title}>Settings</Text>
       </View>
 

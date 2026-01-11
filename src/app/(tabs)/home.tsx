@@ -296,7 +296,7 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={[styles.topSection, { paddingTop: insets.top + 16 }]}>
+      <View style={[styles.topSection, { paddingTop: insets.top + 32 }]}>
         {activeSession && activeProject && (
           <View style={styles.sessionInfo}>
             <View style={styles.projectBadge}>

@@ -114,7 +114,7 @@ export default function InsightsScreen() {
   return (
     <View style={styles.container}>
       {/* Header with Streak */}
-      <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
+      <View style={[styles.header, { paddingTop: insets.top + 32 }]}>
         <Text style={styles.title}>Insights</Text>
         {stats.streak > 0 && (
           <View style={styles.streakBadge}>
