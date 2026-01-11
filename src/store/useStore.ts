@@ -18,6 +18,11 @@ export interface Session {
   id: string;
   label: string;
   projectId: string;
+  projectSnapshot?: {
+    name: string;
+    icon: string;
+    color: string;
+  };
   intervalMinutes: number;
   status: 'active' | 'paused' | 'completed';
   startedAt: string;
@@ -190,6 +195,9 @@ export const useStore = create<AppState>()(
           id: generateId(),
           label: project?.name ?? 'Focus Session',
           projectId,
+          projectSnapshot: project
+            ? { name: project.name, icon: project.icon, color: project.color }
+            : undefined,
           intervalMinutes: settings.intervalMinutes,
           status: 'active',
           startedAt: now,

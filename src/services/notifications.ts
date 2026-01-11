@@ -71,8 +71,7 @@ export const checkNotificationPermissions = async (): Promise<boolean> => {
 };
 
 export const scheduleIntervalNotification = async (
-  intervalSeconds: number,
-  sessionLabel: string
+  intervalSeconds: number
 ): Promise<string | null> => {
   try {
     const { settings } = useStore.getState();
@@ -88,8 +87,8 @@ export const scheduleIntervalNotification = async (
 
     const identifier = await Notifications.scheduleNotificationAsync({
       content: {
-        title: 'Interval Complete ✨',
-        body: `Time to check in on "${sessionLabel}"`,
+        title: 'Interval Complete',
+        body: 'Time to reflect.',
         sound: 'default',
         priority: Notifications.AndroidNotificationPriority.HIGH,
       },

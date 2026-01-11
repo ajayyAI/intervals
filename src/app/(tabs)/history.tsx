@@ -39,18 +39,30 @@ export default function HistoryScreen() {
 
   const renderSession = ({ item }: { item: Session }) => {
     const sessionNotes = getSessionNotes(item.id);
-    const project = getProject(item.projectId);
+    // Use snapshot or fallback to current project list
+    const projectSnapshot = item.projectSnapshot;
+    const currentProject = getProject(item.projectId);
+
+    const displayProject =
+      projectSnapshot ||
+      (currentProject
+        ? {
+            name: currentProject.name,
+            icon: currentProject.icon,
+            color: currentProject.color,
+          }
+        : null);
 
     return (
       <Card style={styles.sessionCard}>
         <View style={styles.sessionHeader}>
           <View style={styles.sessionLabelRow}>
-            {project && (
+            {displayProject && (
               <View style={styles.projectBadge}>
                 <Ionicons
-                  name={project.icon as keyof typeof Ionicons.glyphMap}
+                  name={displayProject.icon as keyof typeof Ionicons.glyphMap}
                   size={12}
-                  color={Colors.text.secondary}
+                  color={Colors.text.primary} // Better contrast
                 />
               </View>
             )}
@@ -76,14 +88,12 @@ export default function HistoryScreen() {
 
         {sessionNotes.length > 0 && (
           <View style={styles.notesContainer}>
-            {sessionNotes.slice(0, 2).map((note) => (
-              <Text key={note.id} style={styles.noteText} numberOfLines={1}>
-                • {note.note}
+            <View style={styles.notePill}>
+              <Ionicons name="document-text-outline" size={12} color={Colors.text.secondary} />
+              <Text style={styles.notePillText}>
+                {sessionNotes.length} note{sessionNotes.length > 1 ? 's' : ''} recorded
               </Text>
-            ))}
-            {sessionNotes.length > 2 && (
-              <Text style={styles.moreNotes}>+{sessionNotes.length - 2} more</Text>
-            )}
+            </View>
           </View>
         )}
       </Card>
@@ -94,7 +104,7 @@ export default function HistoryScreen() {
     <View style={styles.container}>
       <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
         <Text style={styles.title}>History</Text>
-        <Text style={styles.subtitle}>{completedSessions.length} sessions</Text>
+        <Text style={styles.subtitle}>{completedSessions.length} total sessions</Text>
       </View>
 
       <FlashList
@@ -137,6 +147,7 @@ const styles = StyleSheet.create({
   },
   sessionCard: {
     marginBottom: Spacing.md,
+    padding: Spacing.lg,
   },
   sessionHeader: {
     flexDirection: 'row',
@@ -151,9 +162,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   projectBadge: {
-    width: 22,
-    height: 22,
-    borderRadius: 6,
+    width: 24,
+    height: 24,
+    borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: Colors.bg.elevated,
@@ -162,6 +173,7 @@ const styles = StyleSheet.create({
   },
   sessionLabel: {
     ...Typography.title,
+    fontSize: 16,
     color: Colors.text.primary,
   },
   sessionDate: {
@@ -171,35 +183,42 @@ const styles = StyleSheet.create({
   sessionStats: {
     flexDirection: 'row',
     gap: Spacing.xl,
+    paddingVertical: Spacing.xs,
   },
   statItem: {
-    alignItems: 'center',
+    alignItems: 'flex-start',
   },
   statValue: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: '600',
     color: Colors.text.primary,
+    fontFamily: 'SF Pro Rounded', // Assuming we can use this font family if available, else system
   },
   statLabel: {
-    ...Typography.caption,
+    fontSize: 12,
     color: Colors.text.muted,
     marginTop: 2,
   },
   notesContainer: {
     marginTop: Spacing.md,
-    paddingTop: Spacing.md,
+    paddingTop: Spacing.sm,
     borderTopWidth: 1,
     borderTopColor: Colors.border,
+    flexDirection: 'row',
   },
-  noteText: {
-    ...Typography.bodySmall,
-    color: Colors.text.secondary,
-    marginBottom: 4,
+  notePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: Colors.bg.elevated,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 100,
   },
-  moreNotes: {
+  notePillText: {
     ...Typography.caption,
     color: Colors.text.secondary,
-    marginTop: 4,
+    fontWeight: '500',
   },
   emptyState: {
     alignItems: 'center',

@@ -3,6 +3,7 @@ import { Colors, Layout, Shadows, Spacing, Typography } from '@/theme';
 import type React from 'react';
 import {
   ActivityIndicator,
+  type StyleProp,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -16,7 +17,7 @@ interface ButtonProps {
   size?: 'small' | 'medium' | 'large';
   disabled?: boolean;
   loading?: boolean;
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
   icon?: React.ReactNode;
   noHaptic?: boolean;
 }

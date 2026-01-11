@@ -92,10 +92,7 @@ export default function HomeScreen() {
     const scheduleNotificationForSession = async () => {
       if (activeSession && isTimerRunning && timerSeconds > 0 && !notificationIdRef.current) {
         if (settings.notificationsEnabled) {
-          notificationIdRef.current = await scheduleIntervalNotification(
-            timerSeconds,
-            activeSession.label
-          );
+          notificationIdRef.current = await scheduleIntervalNotification(timerSeconds);
         }
         if (startTimeRef.current === 0) {
           startTimeRef.current = Date.now();
@@ -215,10 +212,7 @@ export default function HomeScreen() {
       pauseSession();
     } else {
       if (settings.notificationsEnabled) {
-        notificationIdRef.current = await scheduleIntervalNotification(
-          timerSeconds,
-          activeSession.label
-        );
+        notificationIdRef.current = await scheduleIntervalNotification(timerSeconds);
       }
       startTimeRef.current = Date.now() - elapsedSeconds * 1000;
       resumeSession();
@@ -246,10 +240,7 @@ export default function HomeScreen() {
     await cancelAllNotifications();
 
     if (settings.notificationsEnabled && activeSession) {
-      notificationIdRef.current = await scheduleIntervalNotification(
-        settings.intervalMinutes * 60,
-        activeSession.label
-      );
+      notificationIdRef.current = await scheduleIntervalNotification(settings.intervalMinutes * 60);
     }
     startTimeRef.current = Date.now();
   };
@@ -273,10 +264,7 @@ export default function HomeScreen() {
 
     if (settings.notificationsEnabled) {
       const state = useStore.getState();
-      notificationIdRef.current = await scheduleIntervalNotification(
-        state.timerSeconds,
-        orphanedSession.label
-      );
+      notificationIdRef.current = await scheduleIntervalNotification(state.timerSeconds);
     }
 
     const elapsed = Math.floor((Date.now() - new Date(orphanedSession.startedAt).getTime()) / 1000);
