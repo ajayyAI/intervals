@@ -1,6 +1,7 @@
 import { Card } from '@/components';
 import { type Session, useStore } from '@/store/useStore';
 import { Colors, Layout, Spacing, Typography } from '@/theme';
+import { Ionicons } from '@expo/vector-icons';
 import { FlashList } from '@shopify/flash-list';
 import { format, isToday, isYesterday } from 'date-fns';
 import { StyleSheet, Text, View } from 'react-native';
@@ -8,7 +9,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function HistoryScreen() {
   const insets = useSafeAreaInsets();
-  const { sessions, notes } = useStore();
+  const { sessions, notes, projects } = useStore();
   const bottomPadding = Math.max(insets.bottom, 16) + 64 + 24;
 
   const completedSessions = sessions.filter((s) => s.status === 'completed');
@@ -32,13 +33,29 @@ export default function HistoryScreen() {
     return notes.filter((n) => n.sessionId === sessionId);
   };
 
+  const getProject = (projectId: string) => {
+    return projects.find((p) => p.id === projectId);
+  };
+
   const renderSession = ({ item }: { item: Session }) => {
     const sessionNotes = getSessionNotes(item.id);
+    const project = getProject(item.projectId);
 
     return (
       <Card style={styles.sessionCard}>
         <View style={styles.sessionHeader}>
-          <Text style={styles.sessionLabel}>{item.label}</Text>
+          <View style={styles.sessionLabelRow}>
+            {project && (
+              <View style={styles.projectBadge}>
+                <Ionicons
+                  name={project.icon as keyof typeof Ionicons.glyphMap}
+                  size={12}
+                  color={Colors.text.secondary}
+                />
+              </View>
+            )}
+            <Text style={styles.sessionLabel}>{item.label}</Text>
+          </View>
           <Text style={styles.sessionDate}>{formatDate(item.startedAt)}</Text>
         </View>
 
@@ -126,6 +143,22 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: Spacing.md,
+  },
+  sessionLabelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    flex: 1,
+  },
+  projectBadge: {
+    width: 22,
+    height: 22,
+    borderRadius: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.bg.elevated,
+    borderWidth: 1,
+    borderColor: Colors.border,
   },
   sessionLabel: {
     ...Typography.title,

@@ -6,11 +6,18 @@ const generateId = (): string => {
   return `${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 11)}`;
 };
 
-// ============ TYPES ============
+export interface Project {
+  id: string;
+  name: string;
+  color: string;
+  icon: string;
+  isDefault?: boolean;
+}
 
 export interface Session {
   id: string;
   label: string;
+  projectId: string;
   intervalMinutes: number;
   status: 'active' | 'paused' | 'completed';
   startedAt: string;
@@ -37,6 +44,13 @@ export interface Settings {
 
 // ============ DEFAULT VALUES ============
 
+const DEFAULT_PROJECTS: Project[] = [
+  { id: 'work', name: 'Work', color: '#52525B', icon: 'briefcase-outline', isDefault: true },
+  { id: 'learning', name: 'Learning', color: '#52525B', icon: 'book-outline', isDefault: true },
+  { id: 'personal', name: 'Personal', color: '#52525B', icon: 'person-outline', isDefault: true },
+  { id: 'creative', name: 'Creative', color: '#52525B', icon: 'brush-outline', isDefault: true },
+];
+
 const DEFAULT_SETTINGS: Settings = {
   intervalMinutes: 25,
   soundEnabled: true,
@@ -46,12 +60,11 @@ const DEFAULT_SETTINGS: Settings = {
   onboardingCompleted: false,
 };
 
-// ============ STORE STATE & ACTIONS ============
-
 interface PersistedState {
   sessions: Session[];
   notes: IntervalNote[];
   settings: Settings;
+  projects: Project[];
 }
 
 interface AppState extends PersistedState {
@@ -64,21 +77,31 @@ interface AppState extends PersistedState {
 
   // UI state
   isCheckInModalVisible: boolean;
+  isStartSessionModalVisible: boolean;
   isLoading: boolean;
   _hasHydrated: boolean;
 
   // Setters
   setCurrentLabel: (label: string) => void;
   setTimerSeconds: (seconds: number) => void;
+  setElapsedSeconds: (seconds: number) => void;
   setIsTimerRunning: (running: boolean) => void;
   setCheckInModalVisible: (visible: boolean) => void;
+  setStartSessionModalVisible: (visible: boolean) => void;
   setHasHydrated: (state: boolean) => void;
 
   // Settings actions
   updateSettings: (updates: Partial<Settings>) => void;
 
+  // Project actions
+  createProject: (project: Omit<Project, 'id'>) => Project;
+  updateProject: (id: string, updates: Partial<Omit<Project, 'id'>>) => void;
+  deleteProject: (id: string) => void;
+  getProject: (id: string) => Project | undefined;
+
   // Session actions
-  startSession: (label: string) => Session;
+  startSession: (projectId: string) => Session;
+  restoreSession: (session: Session) => void;
   pauseSession: () => void;
   resumeSession: () => void;
   endSession: () => void;
@@ -90,9 +113,9 @@ interface AppState extends PersistedState {
   // Data actions
   getSessionNotes: (sessionId: string) => IntervalNote[];
   deleteSession: (sessionId: string) => void;
+  discardSession: (sessionId: string) => void;
+  endOrphanedSession: (sessionId: string, totalSeconds: number) => void;
 }
-
-// ============ STORE ============
 
 export const useStore = create<AppState>()(
   persist(
@@ -101,24 +124,26 @@ export const useStore = create<AppState>()(
       sessions: [],
       notes: [],
       settings: DEFAULT_SETTINGS,
+      projects: DEFAULT_PROJECTS,
 
-      // Active state
       activeSession: null,
       currentLabel: '',
       timerSeconds: 0,
       isTimerRunning: false,
       elapsedSeconds: 0,
 
-      // UI state
       isCheckInModalVisible: false,
+      isStartSessionModalVisible: false,
       isLoading: false,
       _hasHydrated: false,
 
       // Setters
       setCurrentLabel: (label) => set({ currentLabel: label }),
       setTimerSeconds: (seconds) => set({ timerSeconds: seconds }),
+      setElapsedSeconds: (seconds) => set({ elapsedSeconds: seconds }),
       setIsTimerRunning: (running) => set({ isTimerRunning: running }),
       setCheckInModalVisible: (visible) => set({ isCheckInModalVisible: visible }),
+      setStartSessionModalVisible: (visible) => set({ isStartSessionModalVisible: visible }),
       setHasHydrated: (state) => set({ _hasHydrated: state }),
 
       // Settings
@@ -128,13 +153,43 @@ export const useStore = create<AppState>()(
         }));
       },
 
+      // Project actions
+      createProject: (projectData) => {
+        const project: Project = {
+          ...projectData,
+          id: generateId(),
+        };
+        set((state) => ({
+          projects: [...state.projects, project],
+        }));
+        return project;
+      },
+
+      updateProject: (id, updates) => {
+        set((state) => ({
+          projects: state.projects.map((p) => (p.id === id ? { ...p, ...updates } : p)),
+        }));
+      },
+
+      deleteProject: (id) => {
+        set((state) => ({
+          projects: state.projects.filter((p) => p.id !== id),
+        }));
+      },
+
+      getProject: (id) => {
+        return get().projects.find((p) => p.id === id);
+      },
+
       // Session actions
-      startSession: (label) => {
-        const { settings } = get();
+      startSession: (projectId) => {
+        const { settings, projects } = get();
+        const project = projects.find((p) => p.id === projectId);
         const now = new Date().toISOString();
         const session: Session = {
           id: generateId(),
-          label,
+          label: project?.name ?? 'Focus Session',
+          projectId,
           intervalMinutes: settings.intervalMinutes,
           status: 'active',
           startedAt: now,
@@ -147,10 +202,26 @@ export const useStore = create<AppState>()(
           timerSeconds: settings.intervalMinutes * 60,
           isTimerRunning: true,
           elapsedSeconds: 0,
+          isStartSessionModalVisible: false,
           sessions: [session, ...get().sessions],
         });
 
         return session;
+      },
+
+      restoreSession: (session) => {
+        const sessionStartTime = new Date(session.startedAt).getTime();
+        const elapsed = Math.floor((Date.now() - sessionStartTime) / 1000);
+        const intervalDuration = session.intervalMinutes * 60;
+        const elapsedInCurrentInterval = elapsed % intervalDuration;
+        const remaining = Math.max(0, intervalDuration - elapsedInCurrentInterval);
+
+        set({
+          activeSession: session,
+          timerSeconds: remaining,
+          isTimerRunning: false,
+          elapsedSeconds: elapsed,
+        });
       },
 
       pauseSession: () => {
@@ -203,6 +274,7 @@ export const useStore = create<AppState>()(
         if (!activeSession) return;
 
         set((state) => ({
+          isTimerRunning: false,
           isCheckInModalVisible: true,
           activeSession: {
             ...activeSession,
@@ -230,7 +302,6 @@ export const useStore = create<AppState>()(
           }));
         }
 
-        // Reset timer for next interval
         set({
           timerSeconds: settings.intervalMinutes * 60,
           isCheckInModalVisible: false,
@@ -248,6 +319,34 @@ export const useStore = create<AppState>()(
           notes: state.notes.filter((n) => n.sessionId !== sessionId),
         }));
       },
+
+      discardSession: (sessionId) => {
+        set((state) => ({
+          activeSession: null,
+          isTimerRunning: false,
+          timerSeconds: 0,
+          elapsedSeconds: 0,
+          currentLabel: '',
+          sessions: state.sessions.filter((s) => s.id !== sessionId),
+          notes: state.notes.filter((n) => n.sessionId !== sessionId),
+        }));
+      },
+
+      endOrphanedSession: (sessionId, totalSeconds) => {
+        const now = new Date().toISOString();
+        set((state) => ({
+          activeSession: null,
+          isTimerRunning: false,
+          timerSeconds: 0,
+          elapsedSeconds: 0,
+          currentLabel: '',
+          sessions: state.sessions.map((s) =>
+            s.id === sessionId
+              ? { ...s, status: 'completed' as const, endedAt: now, totalSeconds }
+              : s
+          ),
+        }));
+      },
     }),
     {
       name: '@intervals/store',
@@ -256,6 +355,7 @@ export const useStore = create<AppState>()(
         sessions: state.sessions,
         notes: state.notes,
         settings: state.settings,
+        projects: state.projects,
       }),
       onRehydrateStorage: () => (state) => {
         state?.setHasHydrated(true);

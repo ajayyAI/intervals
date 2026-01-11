@@ -28,6 +28,7 @@ export const CheckInModal: React.FC<CheckInModalProps> = ({
   onContinue,
   onTakeBreak,
 }) => {
+  const { activeSession } = useStore();
   const { submitCheckIn } = useStore();
   const [note, setNote] = useState('');
 
@@ -37,11 +38,13 @@ export const CheckInModal: React.FC<CheckInModalProps> = ({
     onContinue();
   };
 
-  const handleTakeBreak = () => {
+  const handleEndSession = () => {
     submitCheckIn(note);
     setNote('');
     onTakeBreak();
   };
+
+  const intervalsCompleted = activeSession?.intervalsCompleted ?? 0;
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
@@ -49,39 +52,51 @@ export const CheckInModal: React.FC<CheckInModalProps> = ({
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.overlay}
       >
-        <BlurView intensity={40} tint="dark" style={StyleSheet.absoluteFill} />
+        <BlurView intensity={60} tint="dark" style={StyleSheet.absoluteFill} />
 
         <View style={styles.modalContent}>
           <Card elevated style={styles.card}>
-            <Text style={styles.emoji}>✨</Text>
+            {/* Success indicator */}
+            <View style={styles.successBadge}>
+              <Text style={styles.successEmoji}>✓</Text>
+            </View>
+
+            {/* Header */}
             <Text style={styles.title}>Interval Complete</Text>
-            <Text style={styles.subtitle}>What did you accomplish?</Text>
+            <Text style={styles.statsText}>
+              {intervalsCompleted} {intervalsCompleted === 1 ? 'interval' : 'intervals'} done
+            </Text>
 
-            <TextInput
-              style={styles.input}
-              placeholder="Quick note (optional)"
-              placeholderTextColor={Colors.text.muted}
-              value={note}
-              onChangeText={setNote}
-              multiline
-              numberOfLines={3}
-              textAlignVertical="top"
-              returnKeyType="done"
-              submitBehavior="blurAndSubmit"
-            />
-
-            <View style={styles.buttonRow}>
-              <Button
-                title="End Session"
-                onPress={handleTakeBreak}
-                variant="ghost"
-                style={styles.button}
+            {/* Note input */}
+            <View style={styles.inputContainer}>
+              <Text style={styles.inputLabel}>Quick reflection</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="What did you accomplish?"
+                placeholderTextColor={Colors.text.muted}
+                value={note}
+                onChangeText={setNote}
+                multiline
+                numberOfLines={3}
+                textAlignVertical="top"
+                returnKeyType="done"
+                submitBehavior="blurAndSubmit"
               />
+            </View>
+
+            {/* Actions - stacked full-width buttons */}
+            <View style={styles.buttonStack}>
               <Button
-                title="Continue"
+                title="Continue Focus"
                 onPress={handleContinue}
                 variant="primary"
-                style={styles.button}
+                size="large"
+              />
+              <Button
+                title="End Session"
+                onPress={handleEndSession}
+                variant="secondary"
+                size="medium"
               />
             </View>
           </Card>
@@ -95,47 +110,63 @@ const styles = StyleSheet.create({
   overlay: {
     flex: 1,
     justifyContent: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
   },
   modalContent: {
     paddingHorizontal: Layout.screenPadding,
   },
   card: {
     padding: Spacing.xl,
+    paddingTop: Spacing.xxl,
   },
-  emoji: {
-    fontSize: 40,
-    textAlign: 'center',
-    marginBottom: Spacing.md,
+  successBadge: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: Colors.accent,
+    alignItems: 'center',
+    justifyContent: 'center',
+    alignSelf: 'center',
+    marginBottom: Spacing.lg,
+  },
+  successEmoji: {
+    fontSize: 28,
+    color: Colors.bg.primary,
+    fontWeight: '700',
   },
   title: {
     ...Typography.h2,
     color: Colors.text.primary,
     textAlign: 'center',
+    marginBottom: Spacing.xs,
   },
-  subtitle: {
-    ...Typography.body,
-    color: Colors.text.secondary,
+  statsText: {
+    ...Typography.bodySmall,
+    color: Colors.text.muted,
     textAlign: 'center',
-    marginTop: Spacing.sm,
     marginBottom: Spacing.xl,
+  },
+  inputContainer: {
+    marginBottom: Spacing.xl,
+  },
+  inputLabel: {
+    ...Typography.caption,
+    color: Colors.text.secondary,
+    marginBottom: Spacing.sm,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
   },
   input: {
     backgroundColor: Colors.bg.primary,
-    borderRadius: 12,
+    borderRadius: Layout.inputRadius,
     padding: Spacing.md,
     color: Colors.text.primary,
     fontSize: 16,
-    minHeight: 80,
-    marginBottom: Spacing.lg,
+    minHeight: 88,
     borderWidth: 1,
     borderColor: Colors.border,
   },
-  buttonRow: {
-    flexDirection: 'row',
-    gap: Spacing.md,
-  },
-  button: {
-    flex: 1,
+  buttonStack: {
+    gap: Spacing.sm,
   },
 });

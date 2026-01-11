@@ -1,7 +1,8 @@
 import { ErrorBoundary } from '@/components';
+import { useStore } from '@/store/useStore';
 import { Colors } from '@/theme';
 import { useFonts } from 'expo-font';
-import { Stack } from 'expo-router';
+import { Stack, useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
@@ -12,6 +13,11 @@ SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const [appIsReady, setAppIsReady] = useState(false);
+  const router = useRouter();
+  const segments = useSegments();
+
+  const hasHydrated = useStore((state) => state._hasHydrated);
+  const onboardingCompleted = useStore((state) => state.settings.onboardingCompleted);
 
   // Load fonts - on native, expo-font plugin preloads them but we still need to call useFonts
   const [fontsLoaded, fontError] = useFonts({
@@ -40,12 +46,18 @@ export default function RootLayout() {
   }, [fontsLoaded, fontError]);
 
   useEffect(() => {
-    if (appIsReady) {
+    if (appIsReady && hasHydrated) {
       SplashScreen.hideAsync();
-    }
-  }, [appIsReady]);
 
-  if (!appIsReady) {
+      if (!onboardingCompleted) {
+        router.replace('/onboarding');
+      } else if (onboardingCompleted && segments[0] === 'onboarding') {
+        router.replace('/(tabs)/home');
+      }
+    }
+  }, [appIsReady, hasHydrated, onboardingCompleted, segments]);
+
+  if (!appIsReady || !hasHydrated) {
     return null;
   }
 
@@ -63,6 +75,7 @@ export default function RootLayout() {
           >
             <Stack.Screen name="index" />
             <Stack.Screen name="(tabs)" />
+            <Stack.Screen name="onboarding" options={{ gestureEnabled: false }} />
           </Stack>
         </ErrorBoundary>
       </SafeAreaProvider>

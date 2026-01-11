@@ -14,7 +14,6 @@ const setupNotificationHandler = () => {
         const shouldShow = state?.settings?.notificationsEnabled ?? false;
 
         return {
-          shouldShowAlert: shouldShow,
           shouldPlaySound: shouldShow,
           shouldSetBadge: false,
           shouldShowBanner: shouldShow,

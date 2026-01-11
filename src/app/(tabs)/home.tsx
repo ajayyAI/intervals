@@ -1,4 +1,10 @@
-import { Button, CheckInModal, FlipTimer } from '@/components';
+import {
+  Button,
+  CheckInModal,
+  FlipTimer,
+  SessionRecoveryModal,
+  StartSessionModal,
+} from '@/components';
 import { useHaptics } from '@/hooks/useHaptics';
 import { useIntervalChime } from '@/hooks/useSounds';
 import {
@@ -9,6 +15,7 @@ import {
 } from '@/services/notifications';
 import { useStore } from '@/store/useStore';
 import { Colors, Spacing } from '@/theme';
+import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useRef, useState } from 'react';
 import { AppState, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -17,27 +24,41 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const {
     activeSession,
+    sessions,
     timerSeconds,
     isTimerRunning,
     isCheckInModalVisible,
+    isStartSessionModalVisible,
     settings,
+    projects,
+    elapsedSeconds,
     setTimerSeconds,
+    setElapsedSeconds,
     setCheckInModalVisible,
-    startSession,
+    setStartSessionModalVisible,
     pauseSession,
     resumeSession,
     endSession,
     completeInterval,
+    restoreSession,
+    discardSession,
+    endOrphanedSession,
+    _hasHydrated,
   } = useStore();
 
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const startTimeRef = useRef<number>(0);
   const notificationIdRef = useRef<string | null>(null);
   const appState = useRef(AppState.currentState);
-  const [localElapsed, setLocalElapsed] = useState(0);
+  const hasCheckedRecovery = useRef(false);
+  const [showRecoveryModal, setShowRecoveryModal] = useState(false);
 
   const haptics = useHaptics();
   const { play: playChime } = useIntervalChime();
+
+  const activeProject = activeSession
+    ? projects.find((p) => p.id === activeSession.projectId)
+    : null;
 
   useEffect(() => {
     if (settings.notificationsEnabled) {
@@ -45,22 +66,70 @@ export default function HomeScreen() {
     }
   }, [settings.notificationsEnabled]);
 
+  const [orphanedSession, setOrphanedSession] = useState<typeof activeSession>(null);
+
+  useEffect(() => {
+    if (!_hasHydrated || hasCheckedRecovery.current) return;
+    hasCheckedRecovery.current = true;
+
+    const orphaned = sessions.find((s) => s.status === 'active');
+
+    if (orphaned && !activeSession) {
+      // Found an orphaned session that wasn't properly ended
+      const sessionAge = Date.now() - new Date(orphaned.startedAt).getTime();
+      const twentyFourHours = 24 * 60 * 60 * 1000;
+
+      if (sessionAge > twentyFourHours) {
+        discardSession(orphaned.id);
+      } else {
+        setOrphanedSession(orphaned);
+        setShowRecoveryModal(true);
+      }
+    }
+  }, [_hasHydrated, sessions, activeSession, discardSession]);
+
+  useEffect(() => {
+    const scheduleNotificationForSession = async () => {
+      if (activeSession && isTimerRunning && timerSeconds > 0 && !notificationIdRef.current) {
+        if (settings.notificationsEnabled) {
+          notificationIdRef.current = await scheduleIntervalNotification(
+            timerSeconds,
+            activeSession.label
+          );
+        }
+        if (startTimeRef.current === 0) {
+          startTimeRef.current = Date.now();
+          setElapsedSeconds(0);
+        }
+      }
+    };
+    scheduleNotificationForSession();
+  }, [activeSession?.id, isTimerRunning, settings.notificationsEnabled]);
+
   useEffect(() => {
     if (!activeSession) {
       cancelAllNotifications();
+      notificationIdRef.current = null;
+      startTimeRef.current = 0;
     }
-  }, []);
+  }, [activeSession]);
 
   useEffect(() => {
     if (isTimerRunning && timerSeconds > 0) {
       timerRef.current = setInterval(() => {
         setTimerSeconds(timerSeconds - 1);
-        setLocalElapsed((prev) => prev + 1);
+        setElapsedSeconds(elapsedSeconds + 1);
       }, 1000);
     } else if (timerSeconds === 0 && isTimerRunning && activeSession) {
       if (timerRef.current) {
         clearInterval(timerRef.current);
         timerRef.current = null;
+      }
+
+      // Cancel the notification that was scheduled for this interval
+      if (notificationIdRef.current) {
+        cancelNotification(notificationIdRef.current);
+        notificationIdRef.current = null;
       }
 
       haptics.notification('success');
@@ -80,11 +149,13 @@ export default function HomeScreen() {
   }, [
     isTimerRunning,
     timerSeconds,
+    elapsedSeconds,
     activeSession,
     settings.soundEnabled,
     playChime,
     completeInterval,
     setTimerSeconds,
+    setElapsedSeconds,
     haptics,
   ]);
 
@@ -95,6 +166,17 @@ export default function HomeScreen() {
           const elapsed = Math.floor((Date.now() - startTimeRef.current) / 1000);
           const remaining = Math.max(0, settings.intervalMinutes * 60 - elapsed);
           setTimerSeconds(remaining);
+          // Also sync elapsed seconds
+          setElapsedSeconds(elapsed);
+
+          // If timer completed while in background, trigger completion
+          if (remaining === 0) {
+            if (notificationIdRef.current) {
+              await cancelNotification(notificationIdRef.current);
+              notificationIdRef.current = null;
+            }
+            completeInterval();
+          }
         }
       }
 
@@ -106,22 +188,18 @@ export default function HomeScreen() {
     });
 
     return () => subscription.remove();
-  }, [isTimerRunning, settings.intervalMinutes, setTimerSeconds, activeSession]);
+  }, [
+    isTimerRunning,
+    settings.intervalMinutes,
+    setTimerSeconds,
+    setElapsedSeconds,
+    activeSession,
+    completeInterval,
+  ]);
 
-  const handleStart = async () => {
-    haptics.impact('heavy');
-
-    if (settings.notificationsEnabled) {
-      const intervalSeconds = settings.intervalMinutes * 60;
-      notificationIdRef.current = await scheduleIntervalNotification(
-        intervalSeconds,
-        'Focus Session'
-      );
-    }
-
-    startTimeRef.current = Date.now();
-    setLocalElapsed(0);
-    startSession('Focus Session');
+  const handleStartPress = () => {
+    haptics.impact('medium');
+    setStartSessionModalVisible(true);
   };
 
   const handleTimerPress = async () => {
@@ -142,7 +220,7 @@ export default function HomeScreen() {
           activeSession.label
         );
       }
-      startTimeRef.current = Date.now() - localElapsed * 1000;
+      startTimeRef.current = Date.now() - elapsedSeconds * 1000;
       resumeSession();
     }
   };
@@ -156,11 +234,17 @@ export default function HomeScreen() {
     }
     await cancelAllNotifications();
     endSession();
-    setLocalElapsed(0);
     startTimeRef.current = 0;
   };
 
   const handleCheckInContinue = async () => {
+    // Cancel any stale notifications before scheduling new one
+    if (notificationIdRef.current) {
+      await cancelNotification(notificationIdRef.current);
+      notificationIdRef.current = null;
+    }
+    await cancelAllNotifications();
+
     if (settings.notificationsEnabled && activeSession) {
       notificationIdRef.current = await scheduleIntervalNotification(
         settings.intervalMinutes * 60,
@@ -168,7 +252,6 @@ export default function HomeScreen() {
       );
     }
     startTimeRef.current = Date.now();
-    setLocalElapsed(0);
   };
 
   const handleCheckInBreak = async () => {
@@ -178,8 +261,47 @@ export default function HomeScreen() {
     }
     await cancelAllNotifications();
     endSession();
-    setLocalElapsed(0);
     startTimeRef.current = 0;
+  };
+
+  // Recovery modal handlers
+  const handleRecoveryResume = async () => {
+    if (!orphanedSession) return;
+    setShowRecoveryModal(false);
+
+    restoreSession(orphanedSession);
+
+    if (settings.notificationsEnabled) {
+      const state = useStore.getState();
+      notificationIdRef.current = await scheduleIntervalNotification(
+        state.timerSeconds,
+        orphanedSession.label
+      );
+    }
+
+    const elapsed = Math.floor((Date.now() - new Date(orphanedSession.startedAt).getTime()) / 1000);
+    startTimeRef.current = Date.now() - elapsed * 1000;
+
+    resumeSession();
+    setOrphanedSession(null);
+  };
+
+  const handleRecoverySaveEnd = async () => {
+    if (!orphanedSession) return;
+    setShowRecoveryModal(false);
+    await cancelAllNotifications();
+
+    const elapsed = Math.floor((Date.now() - new Date(orphanedSession.startedAt).getTime()) / 1000);
+    endOrphanedSession(orphanedSession.id, elapsed);
+    setOrphanedSession(null);
+  };
+
+  const handleRecoveryDiscard = async () => {
+    if (!orphanedSession) return;
+    setShowRecoveryModal(false);
+    await cancelAllNotifications();
+    discardSession(orphanedSession.id);
+    setOrphanedSession(null);
   };
 
   const bottomPadding = Math.max(insets.bottom, 16) + 64 + 24;
@@ -187,8 +309,17 @@ export default function HomeScreen() {
   return (
     <View style={styles.container}>
       <View style={[styles.topSection, { paddingTop: insets.top + 16 }]}>
-        {activeSession && (
+        {activeSession && activeProject && (
           <View style={styles.sessionInfo}>
+            <View style={styles.projectBadge}>
+              <Ionicons
+                name={activeProject.icon as keyof typeof Ionicons.glyphMap}
+                size={14}
+                color={Colors.text.secondary}
+              />
+            </View>
+            <Text style={styles.projectName}>{activeProject.name}</Text>
+            <Text style={styles.separator}>·</Text>
             <Text style={styles.intervalsCount}>{activeSession.intervalsCompleted}</Text>
             <Text style={styles.intervalsLabel}>intervals</Text>
           </View>
@@ -209,7 +340,7 @@ export default function HomeScreen() {
           <View style={styles.startContainer}>
             <Button
               title="Start Focus"
-              onPress={handleStart}
+              onPress={handleStartPress}
               variant="primary"
               size="large"
               style={styles.startButton}
@@ -227,11 +358,24 @@ export default function HomeScreen() {
         )}
       </View>
 
+      <StartSessionModal
+        visible={isStartSessionModalVisible}
+        onClose={() => setStartSessionModalVisible(false)}
+      />
+
       <CheckInModal
         visible={isCheckInModalVisible}
         onClose={() => setCheckInModalVisible(false)}
         onContinue={handleCheckInContinue}
         onTakeBreak={handleCheckInBreak}
+      />
+
+      <SessionRecoveryModal
+        visible={showRecoveryModal}
+        session={orphanedSession}
+        onResume={handleRecoveryResume}
+        onSaveEnd={handleRecoverySaveEnd}
+        onDiscard={handleRecoveryDiscard}
       />
     </View>
   );
@@ -243,17 +387,37 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.bg.primary,
   },
   topSection: {
-    alignItems: 'flex-end',
+    alignItems: 'center',
     paddingHorizontal: 24,
     minHeight: 60,
   },
   sessionInfo: {
     flexDirection: 'row',
-    alignItems: 'baseline',
+    alignItems: 'center',
     gap: 6,
   },
+  projectBadge: {
+    width: 24,
+    height: 24,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.bg.elevated,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  projectName: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: Colors.text.primary,
+  },
+  separator: {
+    fontSize: 14,
+    color: Colors.text.muted,
+    marginHorizontal: 2,
+  },
   intervalsCount: {
-    fontSize: 20,
+    fontSize: 14,
     fontWeight: '600',
     color: Colors.text.secondary,
     fontVariant: ['tabular-nums'],
