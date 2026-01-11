@@ -16,7 +16,6 @@ import {
   View,
 } from 'react-native';
 import { Button } from './Button';
-import { Card } from './Card';
 
 const PROJECT_ICONS = [
   'briefcase-outline',
@@ -50,7 +49,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ visible,
     haptics.notification('success');
     createProject({
       name: name.trim(),
-      color: '#52525B', // Default color for now
+      color: '#52525B',
       icon: selectedIcon,
     });
 
@@ -68,38 +67,34 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ visible,
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={handleClose}>
-      <View style={styles.overlay}>
-        <BlurView intensity={80} tint="dark" style={StyleSheet.absoluteFill} />
-
+      <BlurView intensity={80} tint="dark" style={StyleSheet.absoluteFill}>
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={styles.keyboardView}
         >
-          <View style={styles.modalContent}>
-            <Card elevated style={styles.card}>
+          <View style={styles.modalBody}>
+            <View style={styles.header}>
+              <Text style={styles.title}>New Project</Text>
               <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
-                <Ionicons name="close" size={20} color={Colors.text.muted} />
+                <Ionicons name="close" size={24} color={Colors.text.primary} />
               </TouchableOpacity>
+            </View>
 
-              <View style={styles.header}>
-                <View style={styles.iconCircle}>
-                  <Ionicons name="folder-open" size={24} color={Colors.accent} />
-                </View>
-                <Text style={styles.title}>New Project</Text>
+            <View style={styles.form}>
+              <View style={styles.inputContainer}>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Project Name"
+                  placeholderTextColor={Colors.text.muted}
+                  value={name}
+                  onChangeText={setName}
+                  autoFocus={visible}
+                  selectionColor={Colors.accent}
+                />
               </View>
 
-              <View style={styles.form}>
-                <View style={styles.inputGroup}>
-                  <TextInput
-                    style={styles.input}
-                    placeholder="Project Name"
-                    placeholderTextColor={Colors.text.muted}
-                    value={name}
-                    onChangeText={setName}
-                    autoFocus={visible}
-                  />
-                </View>
-
+              <View style={styles.iconSection}>
+                <Text style={styles.sectionLabel}>Icon</Text>
                 <View style={styles.iconGrid}>
                   {PROJECT_ICONS.map((icon) => (
                     <TouchableOpacity
@@ -113,112 +108,93 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ visible,
                       <Ionicons
                         name={icon as keyof typeof Ionicons.glyphMap}
                         size={20}
-                        color={selectedIcon === icon ? Colors.text.primary : Colors.text.muted}
+                        color={selectedIcon === icon ? Colors.bg.primary : Colors.text.secondary}
                       />
                     </TouchableOpacity>
                   ))}
                 </View>
-
-                <Button
-                  title="Create Project"
-                  onPress={handleCreate}
-                  variant="primary"
-                  size="large"
-                  disabled={!name.trim()}
-                  style={[!name.trim() ? styles.disabledButton : undefined]}
-                />
               </View>
-            </Card>
+
+              <Button
+                title="Create Project"
+                onPress={handleCreate}
+                variant="primary"
+                size="large"
+                disabled={!name.trim()}
+                style={[!name.trim() ? styles.disabledButton : undefined]}
+              />
+            </View>
           </View>
         </KeyboardAvoidingView>
-      </View>
+      </BlurView>
     </Modal>
   );
 };
 
 const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    justifyContent: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.75)',
-  },
   keyboardView: {
     flex: 1,
     justifyContent: 'center',
-    width: '100%',
+    padding: Spacing.lg,
   },
-  modalContent: {
-    paddingHorizontal: Spacing.xl,
+  modalBody: {
+    backgroundColor: Colors.bg.elevated,
+    borderRadius: 24,
+    padding: Spacing.xl,
     width: '100%',
     maxWidth: 400,
     alignSelf: 'center',
   },
-  card: {
-    padding: Spacing.xl,
-    width: '100%',
-  },
-  closeButton: {
-    position: 'absolute',
-    top: Spacing.md,
-    right: Spacing.md,
-    padding: 8,
-    zIndex: 10,
-  },
   header: {
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     marginBottom: Spacing.xl,
-    marginTop: Spacing.xs,
-  },
-  iconCircle: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: Colors.bg.elevated,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: Spacing.md,
-    borderWidth: 1,
-    borderColor: Colors.border,
   },
   title: {
-    ...Typography.h3,
+    ...Typography.h2,
     color: Colors.text.primary,
+  },
+  closeButton: {
+    padding: 4,
   },
   form: {
-    gap: Spacing.lg,
+    gap: Spacing.xl,
   },
-  inputGroup: {
-    gap: Spacing.sm,
+  inputContainer: {
+    gap: Spacing.xs,
   },
   input: {
-    backgroundColor: Colors.bg.elevated,
+    backgroundColor: Colors.bg.card,
     borderRadius: 16,
-    padding: Spacing.lg,
+    padding: 16,
     color: Colors.text.primary,
-    fontSize: 16,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    textAlign: 'center',
+    fontSize: 18,
+    fontWeight: '500',
+  },
+  iconSection: {
+    gap: 12,
+  },
+  sectionLabel: {
+    ...Typography.caption,
+    color: Colors.text.muted,
+    marginLeft: 4,
   },
   iconGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 12,
-    justifyContent: 'center',
   },
   iconOption: {
     width: 44,
     height: 44,
     borderRadius: 14,
-    backgroundColor: Colors.bg.elevated,
+    backgroundColor: Colors.bg.card,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: 'transparent',
   },
   iconOptionActive: {
-    borderColor: Colors.text.primary,
-    backgroundColor: Colors.bg.primary,
+    backgroundColor: Colors.accent,
   },
   disabledButton: {
     opacity: 0.5,

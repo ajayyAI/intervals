@@ -1,4 +1,3 @@
-import { Card } from '@/components';
 import { useHaptics } from '@/hooks/useHaptics';
 import { useSoundPreview } from '@/hooks/useSounds';
 import { AVAILABLE_SOUNDS, type SoundName } from '@/services/audio';
@@ -34,17 +33,21 @@ const ProjectsSection = () => {
   };
 
   return (
-    <Card style={styles.section}>
-      <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>Projects</Text>
-      </View>
-      <Text style={styles.sectionHint}>Manage your focus categories</Text>
-
+    <View style={styles.sectionContainer}>
+      <Text style={styles.sectionHeaderTitle}>PROJECTS</Text>
       <TouchableOpacity onPress={handleManage} style={styles.manageButton}>
-        <Text style={styles.totalProjectsText}>{projects.length} Projects</Text>
+        <View style={styles.manageContent}>
+          <View style={styles.manageIconBg}>
+            <Ionicons name="folder-open-outline" size={20} color={Colors.text.primary} />
+          </View>
+          <View>
+            <Text style={styles.manageTitle}>Manage Projects</Text>
+            <Text style={styles.manageSubtitle}>{projects.length} active categories</Text>
+          </View>
+        </View>
         <Ionicons name="chevron-forward" size={16} color={Colors.text.muted} />
       </TouchableOpacity>
-    </Card>
+    </View>
   );
 };
 
@@ -100,22 +103,18 @@ export default function SettingsScreen() {
 
   return (
     <View style={styles.container}>
+      {/* Header */}
+      <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
+        <Text style={styles.title}>Settings</Text>
+      </View>
+
       <ScrollView
         contentContainerStyle={[styles.scrollContent, { paddingBottom: bottomPadding }]}
         showsVerticalScrollIndicator={false}
       >
-        {/* Header */}
-        <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
-          <Text style={styles.title}>Settings</Text>
-        </View>
-
         {/* Interval Duration */}
-        <Card style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Interval Duration</Text>
-          </View>
-          <Text style={styles.sectionHint}>Time between check-ins</Text>
-
+        <View style={styles.sectionContainer}>
+          <Text style={styles.sectionHeaderTitle}>INTERVAL LENGTH</Text>
           <View style={styles.intervalGrid}>
             {INTERVAL_OPTIONS.map((minutes) => (
               <TouchableOpacity
@@ -145,98 +144,103 @@ export default function SettingsScreen() {
               </TouchableOpacity>
             ))}
           </View>
-        </Card>
+        </View>
 
         {/* Projects */}
         <ProjectsSection />
 
         {/* Sound & Notifications */}
-        <Card style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Alerts</Text>
-          </View>
+        <View style={styles.sectionContainer}>
+          <Text style={styles.sectionHeaderTitle}>PREFERENCES</Text>
 
-          <View style={styles.toggleRow}>
-            <View>
-              <Text style={styles.toggleLabel}>Sound</Text>
-              <Text style={styles.toggleHint}>Play chime at intervals</Text>
+          <View style={styles.preferenceGroup}>
+            {/* Sound Toggle */}
+            <View style={styles.toggleRow}>
+              <View>
+                <Text style={styles.toggleLabel}>Sound</Text>
+                <Text style={styles.toggleHint}>Chime at intervals</Text>
+              </View>
+              <Switch
+                value={settings.soundEnabled}
+                onValueChange={handleSoundToggle}
+                trackColor={{ false: Colors.bg.card, true: Colors.text.secondary }}
+                thumbColor={settings.soundEnabled ? Colors.text.primary : Colors.text.muted}
+              />
             </View>
-            <Switch
-              value={settings.soundEnabled}
-              onValueChange={handleSoundToggle}
-              trackColor={{ false: Colors.bg.elevated, true: Colors.text.muted }}
-              thumbColor={settings.soundEnabled ? Colors.text.primary : Colors.text.secondary}
-            />
-          </View>
 
-          {/* Sound Selection */}
-          {settings.soundEnabled && (
-            <View style={styles.soundGrid}>
-              {AVAILABLE_SOUNDS.map((sound) => {
-                const isSelected = settings.selectedSound === sound.id;
-                return (
-                  <TouchableOpacity
-                    key={sound.id}
-                    onPress={() => handleSoundSelect(sound.id)}
-                    style={[styles.soundButton, isSelected && styles.soundButtonActive]}
-                  >
-                    <Ionicons
-                      name={isSelected ? 'musical-notes' : 'musical-notes-outline'}
-                      size={18}
-                      color={isSelected ? Colors.bg.primary : Colors.text.secondary}
-                    />
-                    <Text style={[styles.soundText, isSelected && styles.soundTextActive]}>
-                      {sound.label}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
+            {/* Sound Selection */}
+            {settings.soundEnabled && (
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.soundScroll}
+              >
+                {AVAILABLE_SOUNDS.map((sound) => {
+                  const isSelected = settings.selectedSound === sound.id;
+                  return (
+                    <TouchableOpacity
+                      key={sound.id}
+                      onPress={() => handleSoundSelect(sound.id)}
+                      style={[styles.soundButton, isSelected && styles.soundButtonActive]}
+                    >
+                      <Ionicons
+                        name={isSelected ? 'musical-notes' : 'musical-notes-outline'}
+                        size={16}
+                        color={isSelected ? Colors.bg.primary : Colors.text.secondary}
+                      />
+                      <Text style={[styles.soundText, isSelected && styles.soundTextActive]}>
+                        {sound.label}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </ScrollView>
+            )}
+
+            <View style={styles.divider} />
+
+            {/* Haptic Toggle */}
+            <View style={styles.toggleRow}>
+              <View>
+                <Text style={styles.toggleLabel}>Haptic</Text>
+                <Text style={styles.toggleHint}>Vibration feedback</Text>
+              </View>
+              <Switch
+                value={settings.hapticEnabled}
+                onValueChange={handleHapticToggle}
+                trackColor={{ false: Colors.bg.card, true: Colors.text.secondary }}
+                thumbColor={settings.hapticEnabled ? Colors.text.primary : Colors.text.muted}
+              />
             </View>
-          )}
 
-          <View style={styles.divider} />
+            <View style={styles.divider} />
 
-          <View style={styles.toggleRow}>
-            <View>
-              <Text style={styles.toggleLabel}>Haptic</Text>
-              <Text style={styles.toggleHint}>Vibration feedback</Text>
+            {/* Notification Toggle */}
+            <View style={styles.toggleRow}>
+              <View>
+                <Text style={styles.toggleLabel}>Notifications</Text>
+                <Text style={styles.toggleHint}>Background alerts</Text>
+              </View>
+              <Switch
+                value={settings.notificationsEnabled}
+                onValueChange={handleNotificationToggle}
+                trackColor={{ false: Colors.bg.card, true: Colors.text.secondary }}
+                thumbColor={settings.notificationsEnabled ? Colors.text.primary : Colors.text.muted}
+              />
             </View>
-            <Switch
-              value={settings.hapticEnabled}
-              onValueChange={handleHapticToggle}
-              trackColor={{ false: Colors.bg.elevated, true: Colors.text.muted }}
-              thumbColor={settings.hapticEnabled ? Colors.text.primary : Colors.text.secondary}
-            />
           </View>
-
-          <View style={styles.divider} />
-
-          <View style={styles.toggleRow}>
-            <View>
-              <Text style={styles.toggleLabel}>Notifications</Text>
-              <Text style={styles.toggleHint}>Background alerts</Text>
-            </View>
-            <Switch
-              value={settings.notificationsEnabled}
-              onValueChange={handleNotificationToggle}
-              trackColor={{ false: Colors.bg.elevated, true: Colors.text.muted }}
-              thumbColor={
-                settings.notificationsEnabled ? Colors.text.primary : Colors.text.secondary
-              }
-            />
-          </View>
-        </Card>
+        </View>
 
         {/* About */}
-        <Card style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>About</Text>
+        <View style={styles.sectionContainer}>
+          <Text style={styles.sectionHeaderTitle}>ABOUT</Text>
+          <View style={styles.aboutContainer}>
+            <Text style={styles.versionText}>
+              Intervals v{Constants.expoConfig?.version ?? '1.0.0'}
+            </Text>
+            <Text style={styles.tagline}>Focus Rituals</Text>
           </View>
-          <Text style={styles.versionText}>
-            Intervals v{Constants.expoConfig?.version ?? '1.0.0'}
-          </Text>
-          <Text style={styles.tagline}>An interval focus system</Text>
-        </Card>
+        </View>
       </ScrollView>
     </View>
   );
@@ -247,52 +251,46 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.bg.primary,
   },
-  scrollContent: {
-    padding: Layout.screenPadding,
-  },
   header: {
-    marginBottom: Spacing.xl,
+    paddingHorizontal: Layout.screenPadding,
+    paddingBottom: Spacing.lg,
   },
   title: {
     ...Typography.h1,
     color: Colors.text.primary,
+    fontSize: 32,
   },
-  section: {
-    marginBottom: Spacing.lg,
+  scrollContent: {
+    paddingHorizontal: Layout.screenPadding,
   },
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.sm,
-    marginBottom: Spacing.xs,
+  sectionContainer: {
+    marginBottom: 40,
   },
-  sectionTitle: {
-    ...Typography.title,
-    color: Colors.text.primary,
-  },
-  sectionHint: {
-    ...Typography.caption,
+  sectionHeaderTitle: {
+    fontSize: 11,
+    fontWeight: '600',
     color: Colors.text.muted,
-    marginBottom: Spacing.lg,
+    letterSpacing: 2,
+    marginBottom: Spacing.md,
   },
+
+  // Interval
   intervalGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: Spacing.sm,
+    gap: 12,
   },
   intervalButton: {
-    backgroundColor: Colors.bg.primary,
+    backgroundColor: Colors.bg.elevated,
     borderRadius: 16,
-    paddingVertical: Spacing.md,
-    paddingHorizontal: Spacing.lg,
+    paddingVertical: 16,
+    paddingHorizontal: 20,
     alignItems: 'center',
     minWidth: 72,
-    borderWidth: 1,
-    borderColor: Colors.border,
+    flex: 1,
   },
   intervalButtonActive: {
     backgroundColor: Colors.text.primary,
-    borderColor: Colors.text.primary,
   },
   intervalText: {
     fontSize: 20,
@@ -310,15 +308,58 @@ const styles = StyleSheet.create({
   intervalUnitActive: {
     color: Colors.bg.primary,
   },
+
+  // Projects
+  manageButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    backgroundColor: Colors.bg.elevated,
+    borderRadius: 20,
+  },
+  manageContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+  },
+  manageIconBg: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: Colors.bg.card,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  manageTitle: {
+    ...Typography.body,
+    color: Colors.text.primary,
+    fontWeight: '500',
+    fontSize: 16,
+  },
+  manageSubtitle: {
+    ...Typography.caption,
+    color: Colors.text.muted,
+  },
+
+  // Preferences
+  preferenceGroup: {
+    backgroundColor: Colors.bg.elevated,
+    borderRadius: 24,
+    padding: 8,
+  },
   toggleRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: Spacing.sm,
+    padding: 16,
   },
   toggleLabel: {
     ...Typography.body,
+    fontWeight: '500',
     color: Colors.text.primary,
+    fontSize: 16,
   },
   toggleHint: {
     ...Typography.caption,
@@ -327,8 +368,13 @@ const styles = StyleSheet.create({
   },
   divider: {
     height: 1,
-    backgroundColor: Colors.border,
-    marginVertical: Spacing.sm,
+    backgroundColor: Colors.bg.primary, // Cutout effect
+    marginHorizontal: 16,
+  },
+  soundScroll: {
+    paddingHorizontal: 16,
+    paddingBottom: 16,
+    gap: 8,
   },
   soundGrid: {
     flexDirection: 'row',
@@ -340,13 +386,11 @@ const styles = StyleSheet.create({
   soundButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.bg.elevated,
+    backgroundColor: Colors.bg.card,
     borderRadius: 12,
-    paddingVertical: Spacing.sm,
-    paddingHorizontal: Spacing.md,
-    gap: Spacing.xs,
-    borderWidth: 1,
-    borderColor: 'transparent',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    gap: 6,
   },
   soundButtonActive: {
     backgroundColor: Colors.text.primary,
@@ -354,35 +398,22 @@ const styles = StyleSheet.create({
   soundText: {
     ...Typography.bodySmall,
     color: Colors.text.secondary,
+    fontWeight: '500',
   },
   soundTextActive: {
     color: Colors.bg.primary,
-    fontWeight: '600',
+  },
+
+  // About
+  aboutContainer: {
+    alignItems: 'flex-start',
   },
   versionText: {
-    ...Typography.bodySmall,
+    ...Typography.body,
     color: Colors.text.secondary,
-    marginTop: Spacing.sm,
   },
   tagline: {
     ...Typography.caption,
     color: Colors.text.muted,
-    marginTop: Spacing.xs,
-  },
-  // Projects section
-  manageButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 16,
-    paddingHorizontal: 16,
-    backgroundColor: Colors.bg.elevated,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: 'transparent',
-  },
-  totalProjectsText: {
-    ...Typography.body,
-    color: Colors.text.primary,
   },
 });

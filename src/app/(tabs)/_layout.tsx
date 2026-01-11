@@ -21,8 +21,8 @@ export default function TabLayout() {
           headerShown: false,
           tabBarStyle: {
             backgroundColor: Colors.bg.tabBar,
-            borderTopWidth: 1,
-            borderTopColor: Colors.border,
+            borderTopWidth: 0,
+            elevation: 0,
             paddingTop: 8,
             paddingBottom: Math.max(insets.bottom, 8),
             height: 60 + Math.max(insets.bottom, 8),
@@ -30,12 +30,13 @@ export default function TabLayout() {
           tabBarActiveTintColor: Colors.tab.active,
           tabBarInactiveTintColor: Colors.tab.inactive,
           tabBarLabelStyle: {
-            fontSize: 11,
-            fontWeight: '500',
-            marginTop: 2,
+            fontSize: 10,
+            fontWeight: '600',
+            marginTop: 4,
+            letterSpacing: 0.5,
           },
           tabBarIconStyle: {
-            marginBottom: -2,
+            marginBottom: 0,
           },
           sceneStyle: {
             backgroundColor: Colors.bg.primary,
@@ -47,7 +48,7 @@ export default function TabLayout() {
           options={{
             title: 'Timer',
             tabBarIcon: ({ color, focused }) => (
-              <Ionicons name={focused ? 'time' : 'time-outline'} size={24} color={color} />
+              <Ionicons name={focused ? 'timer' : 'timer-outline'} size={24} color={color} />
             ),
           }}
         />
@@ -66,7 +67,7 @@ export default function TabLayout() {
             title: 'Insights',
             tabBarIcon: ({ color, focused }) => (
               <Ionicons
-                name={focused ? 'stats-chart' : 'stats-chart-outline'}
+                name={focused ? 'bar-chart' : 'bar-chart-outline'}
                 size={24}
                 color={color}
               />
@@ -78,7 +79,7 @@ export default function TabLayout() {
           options={{
             title: 'Settings',
             tabBarIcon: ({ color, focused }) => (
-              <Ionicons name={focused ? 'settings' : 'settings-outline'} size={24} color={color} />
+              <Ionicons name={focused ? 'cog' : 'cog-outline'} size={24} color={color} />
             ),
           }}
         />

@@ -1,5 +1,6 @@
 import { useStore } from '@/store/useStore';
 import { Colors, Layout, Spacing, Typography } from '@/theme';
+import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import type React from 'react';
 import { useState } from 'react';
@@ -13,7 +14,6 @@ import {
   View,
 } from 'react-native';
 import { Button } from './Button';
-import { Card } from './Card';
 
 interface CheckInModalProps {
   visible: boolean;
@@ -48,31 +48,28 @@ export const CheckInModal: React.FC<CheckInModalProps> = ({
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.overlay}
-      >
-        <BlurView intensity={60} tint="dark" style={StyleSheet.absoluteFill} />
-
-        <View style={styles.modalContent}>
-          <Card elevated style={styles.card}>
-            {/* Success indicator */}
-            <View style={styles.successBadge}>
-              <Text style={styles.successEmoji}>✓</Text>
-            </View>
-
+      <BlurView intensity={90} tint="dark" style={StyleSheet.absoluteFill}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.container}
+        >
+          <View style={styles.modalContent}>
             {/* Header */}
-            <Text style={styles.title}>Interval Complete</Text>
-            <Text style={styles.statsText}>
-              {intervalsCompleted} {intervalsCompleted === 1 ? 'interval' : 'intervals'} done
-            </Text>
+            <View style={styles.header}>
+              <View style={styles.iconContainer}>
+                <Ionicons name="checkmark-circle-outline" size={64} color={Colors.accent} />
+              </View>
+              <Text style={styles.title}>Interval Complete</Text>
+              <Text style={styles.statsText}>
+                {intervalsCompleted} {intervalsCompleted === 1 ? 'interval' : 'intervals'} done
+              </Text>
+            </View>
 
             {/* Note input */}
             <View style={styles.inputContainer}>
-              <Text style={styles.inputLabel}>Quick reflection</Text>
               <TextInput
                 style={styles.input}
-                placeholder="What did you accomplish?"
+                placeholder="Log your progress..."
                 placeholderTextColor={Colors.text.muted}
                 value={note}
                 onChangeText={setNote}
@@ -81,10 +78,11 @@ export const CheckInModal: React.FC<CheckInModalProps> = ({
                 textAlignVertical="top"
                 returnKeyType="done"
                 submitBehavior="blurAndSubmit"
+                selectionColor={Colors.accent}
               />
             </View>
 
-            {/* Actions - stacked full-width buttons */}
+            {/* Actions */}
             <View style={styles.buttonStack}>
               <Button
                 title="Continue Focus"
@@ -99,40 +97,39 @@ export const CheckInModal: React.FC<CheckInModalProps> = ({
                 size="medium"
               />
             </View>
-          </Card>
-        </View>
-      </KeyboardAvoidingView>
+          </View>
+        </KeyboardAvoidingView>
+      </BlurView>
     </Modal>
   );
 };
 
 const styles = StyleSheet.create({
-  overlay: {
+  container: {
     flex: 1,
     justifyContent: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    padding: Spacing.lg,
   },
   modalContent: {
-    paddingHorizontal: Layout.screenPadding,
-  },
-  card: {
-    padding: Spacing.xl,
-    paddingTop: Spacing.xxl,
-  },
-  successBadge: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: Colors.accent,
-    alignItems: 'center',
-    justifyContent: 'center',
+    width: '100%',
+    maxWidth: 400,
     alignSelf: 'center',
-    marginBottom: Spacing.lg,
+    backgroundColor: Colors.bg.elevated,
+    borderRadius: 24,
+    padding: Spacing.xl,
+    paddingTop: 48,
   },
-  successEmoji: {
-    fontSize: 28,
-    color: Colors.bg.primary,
-    fontWeight: '700',
+  header: {
+    alignItems: 'center',
+    marginBottom: Spacing.xl,
+  },
+  iconContainer: {
+    marginBottom: Spacing.md,
+    shadowColor: Colors.accent,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    elevation: 5,
   },
   title: {
     ...Typography.h2,
@@ -144,27 +141,17 @@ const styles = StyleSheet.create({
     ...Typography.bodySmall,
     color: Colors.text.muted,
     textAlign: 'center',
-    marginBottom: Spacing.xl,
   },
   inputContainer: {
     marginBottom: Spacing.xl,
   },
-  inputLabel: {
-    ...Typography.caption,
-    color: Colors.text.secondary,
-    marginBottom: Spacing.sm,
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-  },
   input: {
-    backgroundColor: Colors.bg.primary,
+    backgroundColor: Colors.bg.card,
     borderRadius: Layout.inputRadius,
-    padding: Spacing.md,
+    padding: Spacing.lg,
     color: Colors.text.primary,
     fontSize: 16,
-    minHeight: 88,
-    borderWidth: 1,
-    borderColor: Colors.border,
+    minHeight: 100,
   },
   buttonStack: {
     gap: Spacing.sm,

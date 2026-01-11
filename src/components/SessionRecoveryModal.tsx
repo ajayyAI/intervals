@@ -7,7 +7,6 @@ import { BlurView } from 'expo-blur';
 import type React from 'react';
 import { Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Button } from './Button';
-import { Card } from './Card';
 
 interface SessionRecoveryModalProps {
   visible: boolean;
@@ -60,11 +59,9 @@ export const SessionRecoveryModal: React.FC<SessionRecoveryModalProps> = ({
 
   return (
     <Modal visible={visible} transparent animationType="fade">
-      <View style={styles.overlay}>
-        <BlurView intensity={80} tint="dark" style={StyleSheet.absoluteFill} />
-
-        <View style={styles.modalContent}>
-          <Card elevated style={styles.card}>
+      <BlurView intensity={80} tint="dark" style={StyleSheet.absoluteFill}>
+        <View style={styles.overlay}>
+          <View style={styles.modalContent}>
             <View style={styles.header}>
               <View style={styles.iconCircle}>
                 <Ionicons name="time" size={32} color={Colors.accent} />
@@ -87,9 +84,9 @@ export const SessionRecoveryModal: React.FC<SessionRecoveryModalProps> = ({
                 <Text style={styles.discardText}>Discard</Text>
               </TouchableOpacity>
             </View>
-          </Card>
+          </View>
         </View>
-      </View>
+      </BlurView>
     </Modal>
   );
 };
@@ -98,12 +95,14 @@ const styles = StyleSheet.create({
   overlay: {
     flex: 1,
     justifyContent: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.75)',
+    padding: Spacing.lg,
   },
   modalContent: {
-    paddingHorizontal: Spacing.xl, // Tighter horizontal padding for focus
-  },
-  card: {
+    width: '100%',
+    maxWidth: 400,
+    alignSelf: 'center',
+    backgroundColor: Colors.bg.elevated,
+    borderRadius: 24,
     padding: Spacing.xl,
     alignItems: 'center',
   },
@@ -115,7 +114,7 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: Colors.bg.elevated,
+    backgroundColor: Colors.bg.card,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: Spacing.lg,

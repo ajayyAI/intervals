@@ -6,7 +6,6 @@ import { BlurView } from 'expo-blur';
 import { router } from 'expo-router';
 import type React from 'react';
 import { Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { Card } from './Card';
 
 interface StartSessionModalProps {
   visible: boolean;
@@ -30,11 +29,9 @@ export const StartSessionModal: React.FC<StartSessionModalProps> = ({ visible, o
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <View style={styles.overlay}>
-        <BlurView intensity={80} tint="dark" style={StyleSheet.absoluteFill} />
-
-        <View style={styles.modalContent}>
-          <Card elevated style={styles.card}>
+      <BlurView intensity={80} tint="dark" style={StyleSheet.absoluteFill}>
+        <View style={styles.container}>
+          <View style={styles.modalContent}>
             {/* Header */}
             <View style={styles.header}>
               <Text style={styles.title}>Start Focus</Text>
@@ -67,7 +64,7 @@ export const StartSessionModal: React.FC<StartSessionModalProps> = ({ visible, o
                 activeOpacity={0.6}
                 style={[styles.projectButton, styles.addButton]}
               >
-                <View style={styles.iconWrapper}>
+                <View style={[styles.iconWrapper, styles.addIconWrapper]}>
                   <Ionicons name="add" size={24} color={Colors.text.muted} />
                 </View>
                 <Text style={styles.addText}>Manage</Text>
@@ -76,28 +73,30 @@ export const StartSessionModal: React.FC<StartSessionModalProps> = ({ visible, o
 
             {/* Cancel */}
             <TouchableOpacity onPress={onClose} style={styles.cancelButton} activeOpacity={0.6}>
-              <Text style={styles.cancelText}>Cancel</Text>
+              <View style={styles.closeCircle}>
+                <Ionicons name="close" size={20} color={Colors.text.primary} />
+              </View>
             </TouchableOpacity>
-          </Card>
+          </View>
         </View>
-      </View>
+      </BlurView>
     </Modal>
   );
 };
 
 const styles = StyleSheet.create({
-  overlay: {
+  container: {
     flex: 1,
     justifyContent: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.75)',
+    alignItems: 'center',
+    padding: Spacing.lg,
   },
   modalContent: {
-    paddingHorizontal: Spacing.lg,
-  },
-  card: {
-    paddingHorizontal: Spacing.lg,
-    paddingTop: Spacing.xl,
-    paddingBottom: Spacing.lg,
+    width: '100%',
+    maxWidth: 400,
+    backgroundColor: Colors.bg.elevated,
+    borderRadius: 24,
+    padding: Spacing.xl,
   },
   header: {
     alignItems: 'center',
@@ -127,13 +126,17 @@ const styles = StyleSheet.create({
   iconWrapper: {
     width: 56,
     height: 56,
-    borderRadius: 16,
-    backgroundColor: Colors.bg.primary,
+    borderRadius: 20,
+    backgroundColor: Colors.bg.card,
     alignItems: 'center',
     justifyContent: 'center',
+    marginBottom: Spacing.sm,
+  },
+  addIconWrapper: {
+    backgroundColor: 'transparent',
     borderWidth: 1,
     borderColor: Colors.border,
-    marginBottom: Spacing.sm,
+    borderStyle: 'dashed',
   },
   projectName: {
     ...Typography.caption,
@@ -142,7 +145,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   addButton: {
-    opacity: 0.7,
+    opacity: 0.8,
   },
   addText: {
     ...Typography.caption,
@@ -154,8 +157,12 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.md,
     marginTop: Spacing.sm,
   },
-  cancelText: {
-    ...Typography.body,
-    color: Colors.text.muted,
+  closeCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: Colors.bg.card,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

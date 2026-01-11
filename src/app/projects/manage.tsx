@@ -115,16 +115,14 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: Layout.screenPadding,
     paddingBottom: Spacing.lg,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
   },
   backButton: {
-    padding: 4,
-    marginLeft: -4,
+    padding: 8,
+    marginLeft: -8,
   },
   addButton: {
-    padding: 4,
-    marginRight: -4,
+    padding: 8,
+    marginRight: -8,
   },
   title: {
     ...Typography.h3,
@@ -142,8 +140,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     backgroundColor: Colors.bg.elevated,
     borderRadius: 20,
-    borderWidth: 1,
-    borderColor: 'transparent',
   },
   projectInfo: {
     flexDirection: 'row',
@@ -158,8 +154,6 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.bg.primary,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: Colors.border,
   },
   projectLabel: {
     ...Typography.body,

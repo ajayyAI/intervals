@@ -391,8 +391,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: Colors.bg.elevated,
-    borderWidth: 1,
-    borderColor: Colors.border,
   },
   projectName: {
     fontSize: 14,

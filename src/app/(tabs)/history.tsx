@@ -1,4 +1,3 @@
-import { Card } from '@/components';
 import { type Session, useStore } from '@/store/useStore';
 import { Colors, Layout, Spacing, Typography } from '@/theme';
 import { Ionicons } from '@expo/vector-icons';
@@ -54,49 +53,40 @@ export default function HistoryScreen() {
         : null);
 
     return (
-      <Card style={styles.sessionCard}>
-        <View style={styles.sessionHeader}>
-          <View style={styles.sessionLabelRow}>
-            {displayProject && (
-              <View style={styles.projectBadge}>
-                <Ionicons
-                  name={displayProject.icon as keyof typeof Ionicons.glyphMap}
-                  size={12}
-                  color={Colors.text.primary} // Better contrast
-                />
-              </View>
-            )}
-            <Text style={styles.sessionLabel}>{item.label}</Text>
-          </View>
-          <Text style={styles.sessionDate}>{formatDate(item.startedAt)}</Text>
-        </View>
-
-        <View style={styles.sessionStats}>
-          <View style={styles.statItem}>
-            <Text style={styles.statValue}>{item.intervalsCompleted}</Text>
-            <Text style={styles.statLabel}>Intervals</Text>
-          </View>
-          <View style={styles.statItem}>
-            <Text style={styles.statValue}>{formatDuration(item.totalSeconds)}</Text>
-            <Text style={styles.statLabel}>Duration</Text>
-          </View>
-          <View style={styles.statItem}>
-            <Text style={styles.statValue}>{sessionNotes.length}</Text>
-            <Text style={styles.statLabel}>Notes</Text>
-          </View>
-        </View>
-
-        {sessionNotes.length > 0 && (
-          <View style={styles.notesContainer}>
-            <View style={styles.notePill}>
-              <Ionicons name="document-text-outline" size={12} color={Colors.text.secondary} />
-              <Text style={styles.notePillText}>
-                {sessionNotes.length} note{sessionNotes.length > 1 ? 's' : ''} recorded
+      <View style={styles.sessionRow}>
+        <View style={styles.sessionMain}>
+          <View style={styles.sessionHeader}>
+            <View style={styles.sessionLabelRow}>
+              {displayProject && (
+                <View style={styles.projectBadge}>
+                  <Ionicons
+                    name={displayProject.icon as keyof typeof Ionicons.glyphMap}
+                    size={14}
+                    color={Colors.text.secondary}
+                  />
+                </View>
+              )}
+              <Text style={styles.sessionLabel} numberOfLines={1}>
+                {displayProject ? displayProject.name : item.label}
               </Text>
             </View>
+            <Text style={styles.sessionDuration}>{formatDuration(item.totalSeconds)}</Text>
           </View>
-        )}
-      </Card>
+
+          <View style={styles.sessionMeta}>
+            <Text style={styles.sessionDate}>{formatDate(item.startedAt)}</Text>
+            <Text style={styles.bullet}>•</Text>
+            <Text style={styles.sessionIntervals}>{item.intervalsCompleted} intervals</Text>
+          </View>
+
+          {sessionNotes.length > 0 && (
+            <View style={styles.notesIndicator}>
+              <Ionicons name="document-text" size={14} color={Colors.text.muted} />
+              <Text style={styles.notesCount}>{sessionNotes.length} notes</Text>
+            </View>
+          )}
+        </View>
+      </View>
     );
   };
 
@@ -104,7 +94,7 @@ export default function HistoryScreen() {
     <View style={styles.container}>
       <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
         <Text style={styles.title}>History</Text>
-        <Text style={styles.subtitle}>{completedSessions.length} total sessions</Text>
+        <Text style={styles.subtitle}>{completedSessions.length} sessions</Text>
       </View>
 
       <FlashList
@@ -135,90 +125,84 @@ const styles = StyleSheet.create({
   header: {
     paddingHorizontal: Layout.screenPadding,
     paddingBottom: Spacing.lg,
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    justifyContent: 'space-between',
   },
   title: {
     ...Typography.h1,
     color: Colors.text.primary,
+    fontSize: 32,
   },
   subtitle: {
-    ...Typography.bodySmall,
+    ...Typography.caption,
     color: Colors.text.muted,
-    marginTop: Spacing.xs,
   },
-  sessionCard: {
-    marginBottom: Spacing.md,
-    padding: Spacing.lg,
+  sessionRow: {
+    marginBottom: Spacing.xl,
+    paddingBottom: Spacing.xl,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.bg.elevated, // Very subtle separator
+  },
+  sessionMain: {
+    gap: 8,
   },
   sessionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: Spacing.md,
   },
   sessionLabelRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.sm,
+    gap: 12,
     flex: 1,
+    marginRight: 16,
   },
   projectBadge: {
     width: 24,
-    height: 24,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: Colors.bg.elevated,
-    borderWidth: 1,
-    borderColor: Colors.border,
+    alignItems: 'flex-start',
   },
   sessionLabel: {
-    ...Typography.title,
-    fontSize: 16,
+    ...Typography.body,
+    fontSize: 17,
     color: Colors.text.primary,
+    fontWeight: '500',
+  },
+  sessionDuration: {
+    ...Typography.body,
+    color: Colors.text.primary,
+    fontVariant: ['tabular-nums'],
+    fontWeight: '500',
+  },
+  sessionMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingLeft: 36, // Align with text start (24 icon + 12 gap)
   },
   sessionDate: {
     ...Typography.caption,
     color: Colors.text.muted,
   },
-  sessionStats: {
-    flexDirection: 'row',
-    gap: Spacing.xl,
-    paddingVertical: Spacing.xs,
-  },
-  statItem: {
-    alignItems: 'flex-start',
-  },
-  statValue: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: Colors.text.primary,
-    fontFamily: 'SF Pro Rounded', // Assuming we can use this font family if available, else system
-  },
-  statLabel: {
-    fontSize: 12,
+  bullet: {
+    ...Typography.caption,
     color: Colors.text.muted,
-    marginTop: 2,
   },
-  notesContainer: {
-    marginTop: Spacing.md,
-    paddingTop: Spacing.sm,
-    borderTopWidth: 1,
-    borderTopColor: Colors.border,
-    flexDirection: 'row',
+  sessionIntervals: {
+    ...Typography.caption,
+    color: Colors.text.muted,
   },
-  notePill: {
+  notesIndicator: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: Colors.bg.elevated,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 100,
+    paddingLeft: 36,
+    marginTop: 4,
   },
-  notePillText: {
+  notesCount: {
     ...Typography.caption,
-    color: Colors.text.secondary,
-    fontWeight: '500',
+    color: Colors.text.muted,
   },
   emptyState: {
     alignItems: 'center',

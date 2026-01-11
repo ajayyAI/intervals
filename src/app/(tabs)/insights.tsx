@@ -1,8 +1,7 @@
-import { Card } from '@/components';
 import { useStore } from '@/store/useStore';
 import { Colors, Layout, Spacing, Typography } from '@/theme';
 import { Ionicons } from '@expo/vector-icons';
-import { isToday, startOfDay, subDays } from 'date-fns';
+import { eachDayOfInterval, format, isSameDay, isToday, startOfDay, subDays } from 'date-fns';
 import { useMemo } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -22,9 +21,25 @@ export default function InsightsScreen() {
     const todaySeconds = todaySessions.reduce((sum, s) => sum + s.totalSeconds, 0);
     const todayIntervals = todaySessions.reduce((sum, s) => sum + s.intervalsCompleted, 0);
 
-    // Last 7 days
-    const weekAgo = subDays(new Date(), 7);
-    const recentSessions = completed.filter((s) => new Date(s.startedAt) >= weekAgo);
+    const end = startOfDay(new Date());
+    const start = subDays(end, 6);
+    const last7Days = eachDayOfInterval({ start, end });
+
+    const dailyActivity = last7Days.map((date) => {
+      const daySessions = completed.filter((s) => isSameDay(new Date(s.startedAt), date));
+      const seconds = daySessions.reduce((sum, s) => sum + s.totalSeconds, 0);
+      return {
+        date,
+        seconds,
+        label: format(date, 'EEEEE'), // S, M, T, W, T, F, S
+        isToday: isSameDay(date, new Date()),
+      };
+    });
+
+    const maxDailySeconds = Math.max(...dailyActivity.map((d) => d.seconds), 1);
+
+    // Weekly totals
+    const recentSessions = completed.filter((s) => new Date(s.startedAt) >= start);
     const recentSeconds = recentSessions.reduce((sum, s) => sum + s.totalSeconds, 0);
 
     // Project breakdown (this week)
@@ -53,7 +68,7 @@ export default function InsightsScreen() {
     if (!hasSessionToday) {
       // If no session today, start checking from yesterday
       checkDate = subDays(checkDate, 1);
-    }
+    } // If has session today, current streak includes today, start checking from today (loop handles it)
 
     while (true) {
       const dayStart = startOfDay(checkDate);
@@ -85,6 +100,8 @@ export default function InsightsScreen() {
       projectStats,
       maxProjectSeconds,
       streak,
+      dailyActivity,
+      maxDailySeconds,
     };
   }, [sessions, notes, projects]);
 
@@ -96,59 +113,93 @@ export default function InsightsScreen() {
 
   return (
     <View style={styles.container}>
+      {/* Header with Streak */}
+      <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
+        <Text style={styles.title}>Insights</Text>
+        {stats.streak > 0 && (
+          <View style={styles.streakBadge}>
+            <Ionicons name="flame" size={18} color={Colors.accent} />
+            <Text style={styles.streakText}>{stats.streak}</Text>
+          </View>
+        )}
+      </View>
+
       <ScrollView
         contentContainerStyle={[styles.scrollContent, { paddingBottom: bottomPadding }]}
         showsVerticalScrollIndicator={false}
       >
-        {/* Header */}
-        <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
-          <Text style={styles.title}>Insights</Text>
-        </View>
-
         {/* Today's Focus */}
-        <Card style={styles.section}>
-          <Text style={styles.sectionTitle}>Today</Text>
-          <View style={styles.todayStats}>
-            <View style={styles.todayMain}>
-              <Text style={styles.todayHours}>{formatHours(stats.todayHours)}</Text>
-              <Text style={styles.todayLabel}>hours focused</Text>
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>TODAY</Text>
+          <View style={styles.heroStats}>
+            <View>
+              <Text style={styles.heroValue}>{formatHours(stats.todayHours)}</Text>
+              <Text style={styles.heroLabel}>hours focused</Text>
             </View>
-            <View style={styles.todaySecondary}>
-              <Text style={styles.todayIntervals}>{stats.todayIntervals}</Text>
-              <Text style={styles.todayIntervalsLabel}>intervals</Text>
+            <View style={styles.heroSecondary}>
+              <Text style={styles.heroSecondaryValue}>{stats.todayIntervals}</Text>
+              <Text style={styles.heroSecondaryLabel}>intervals</Text>
             </View>
           </View>
-        </Card>
+        </View>
 
-        {/* Streak */}
-        {stats.streak > 0 && (
-          <Card style={styles.streakCard}>
-            <View style={styles.streakContent}>
-              <View style={styles.streakIcon}>
-                <Ionicons name="flash" size={22} color={Colors.text.secondary} />
-              </View>
-              <View>
-                <Text style={styles.streakValue}>{stats.streak} day streak</Text>
-                <Text style={styles.streakHint}>Keep the momentum going!</Text>
-              </View>
-            </View>
-          </Card>
-        )}
+        {/* Weekly Activity Chart */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>THIS WEEK</Text>
+          <View style={styles.chartContainer}>
+            {stats.dailyActivity.map((day, index) => {
+              const heightPercent = Math.max((day.seconds / stats.maxDailySeconds) * 100, 4); // Min height 4%
+              return (
+                <View key={index} style={styles.chartColumn}>
+                  <View style={styles.barContainer}>
+                    <View
+                      style={[
+                        styles.bar,
+                        {
+                          height: `${heightPercent}%`,
+                          backgroundColor: day.isToday ? Colors.text.primary : Colors.bg.elevated,
+                        },
+                      ]}
+                    />
+                  </View>
+                  <Text
+                    style={[
+                      styles.dayLabel,
+                      day.isToday && { color: Colors.text.primary, fontWeight: '600' },
+                    ]}
+                  >
+                    {day.label}
+                  </Text>
+                </View>
+              );
+            })}
+          </View>
+          <View style={styles.weeklySummary}>
+            <Text style={styles.weeklySummaryText}>
+              <Text style={{ color: Colors.text.primary }}>{stats.weeklyHours}h</Text> total this
+              week
+            </Text>
+          </View>
+        </View>
 
         {/* Projects Breakdown */}
         {stats.projectStats.length > 0 && (
-          <Card style={styles.section}>
-            <Text style={styles.sectionTitle}>This Week by Project</Text>
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>PROJECTS</Text>
             <View style={styles.projectList}>
               {stats.projectStats.map((project) => (
                 <View key={project.id} style={styles.projectRow}>
                   <View style={styles.projectInfo}>
-                    <Ionicons
-                      name={project.icon as keyof typeof Ionicons.glyphMap}
-                      size={16}
-                      color={Colors.text.muted}
-                    />
-                    <Text style={styles.projectName}>{project.name}</Text>
+                    <View style={styles.projectIcon}>
+                      <Ionicons
+                        name={project.icon as keyof typeof Ionicons.glyphMap}
+                        size={14}
+                        color={Colors.text.secondary}
+                      />
+                    </View>
+                    <Text style={styles.projectName} numberOfLines={1}>
+                      {project.name}
+                    </Text>
                     <Text style={styles.projectHours}>{project.hours}h</Text>
                   </View>
                   <View style={styles.progressBarBg}>
@@ -156,7 +207,6 @@ export default function InsightsScreen() {
                       style={[
                         styles.progressBarFill,
                         {
-                          backgroundColor: Colors.text.secondary,
                           width: `${(project.seconds / stats.maxProjectSeconds) * 100}%`,
                         },
                       ]}
@@ -165,27 +215,12 @@ export default function InsightsScreen() {
                 </View>
               ))}
             </View>
-          </Card>
+          </View>
         )}
 
-        {/* This Week */}
-        <Card style={styles.section}>
-          <Text style={styles.sectionTitle}>This Week</Text>
-          <View style={styles.statGrid}>
-            <View style={styles.statItem}>
-              <Text style={styles.statValue}>{stats.weeklyHours}</Text>
-              <Text style={styles.statLabel}>Hours</Text>
-            </View>
-            <View style={styles.statItem}>
-              <Text style={styles.statValue}>{stats.weeklySessions}</Text>
-              <Text style={styles.statLabel}>Sessions</Text>
-            </View>
-          </View>
-        </Card>
-
-        {/* All Time */}
-        <Card style={styles.section}>
-          <Text style={styles.sectionTitle}>All Time</Text>
+        {/* All Time Stats */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>ALL TIME</Text>
           <View style={styles.statGrid}>
             <View style={styles.statItem}>
               <Text style={styles.statValue}>{stats.totalHours}</Text>
@@ -204,7 +239,7 @@ export default function InsightsScreen() {
               <Text style={styles.statLabel}>Notes</Text>
             </View>
           </View>
-        </Card>
+        </View>
       </ScrollView>
     </View>
   );
@@ -215,103 +250,134 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.bg.primary,
   },
-  scrollContent: {
-    padding: Layout.screenPadding,
-  },
   header: {
-    marginBottom: Spacing.xl,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: Layout.screenPadding,
+    marginBottom: Spacing.lg,
   },
   title: {
     ...Typography.h1,
     color: Colors.text.primary,
+    fontSize: 32,
+  },
+  streakBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: 'rgba(184, 167, 125, 0.1)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+  },
+  streakText: {
+    ...Typography.bodySmall,
+    color: Colors.accent,
+    fontWeight: '600',
+    fontVariant: ['tabular-nums'],
+    fontSize: 15,
+  },
+  scrollContent: {
+    paddingHorizontal: Layout.screenPadding,
   },
   section: {
-    marginBottom: Spacing.lg,
+    marginBottom: 40,
   },
   sectionTitle: {
     fontSize: 11,
     fontWeight: '600',
     color: Colors.text.muted,
-    letterSpacing: 1.5,
-    textTransform: 'uppercase',
+    letterSpacing: 2,
     marginBottom: Spacing.lg,
   },
-  // Today's stats
-  todayStats: {
+  heroStats: {
     flexDirection: 'row',
     alignItems: 'flex-end',
     justifyContent: 'space-between',
   },
-  todayMain: {
-    flex: 1,
-  },
-  todayHours: {
-    fontSize: 56,
+  heroValue: {
+    fontSize: 64,
     fontWeight: '200',
     color: Colors.text.primary,
     fontVariant: ['tabular-nums'],
-    lineHeight: 60,
+    lineHeight: 70,
+    letterSpacing: -1,
   },
-  todayLabel: {
+  heroLabel: {
     ...Typography.bodySmall,
     color: Colors.text.muted,
-    marginTop: Spacing.xs,
+    marginTop: 4,
   },
-  todaySecondary: {
+  heroSecondary: {
     alignItems: 'flex-end',
+    marginBottom: 6,
   },
-  todayIntervals: {
-    fontSize: 24,
+  heroSecondaryValue: {
+    fontSize: 32,
     fontWeight: '300',
     color: Colors.text.secondary,
     fontVariant: ['tabular-nums'],
   },
-  todayIntervalsLabel: {
+  heroSecondaryLabel: {
     ...Typography.caption,
     color: Colors.text.muted,
   },
-  // Streak
-  streakCard: {
-    marginBottom: Spacing.lg,
-  },
-  streakContent: {
+  chartContainer: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
+    height: 120,
+    alignItems: 'flex-end',
+  },
+  chartColumn: {
+    flex: 1,
     alignItems: 'center',
-    gap: Spacing.md,
+    gap: 8,
   },
-  streakIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: Colors.bg.primary,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    alignItems: 'center',
-    justifyContent: 'center',
+  barContainer: {
+    width: 8,
+    height: '100%',
+    justifyContent: 'flex-end',
+    backgroundColor: 'transparent',
+    borderRadius: 4,
+    overflow: 'hidden',
   },
-  streakValue: {
-    ...Typography.title,
-    color: Colors.text.primary,
+  bar: {
+    width: '100%',
+    borderRadius: 4,
   },
-  streakHint: {
+  dayLabel: {
+    fontSize: 11,
+    color: Colors.text.muted,
+    fontWeight: '500',
+  },
+  weeklySummary: {
+    marginTop: Spacing.md,
+    alignItems: 'flex-end',
+  },
+  weeklySummaryText: {
     ...Typography.caption,
     color: Colors.text.muted,
   },
-  // Project breakdown
+  // Projects
   projectList: {
-    gap: Spacing.md,
+    gap: Spacing.lg,
   },
   projectRow: {
-    gap: Spacing.sm,
+    gap: 8,
   },
   projectInfo: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.sm,
+    gap: 10,
   },
-
+  projectIcon: {
+    width: 24,
+    alignItems: 'center',
+  },
   projectName: {
-    ...Typography.bodySmall,
+    ...Typography.body,
+    fontSize: 15,
     color: Colors.text.primary,
     flex: 1,
   },
@@ -321,38 +387,36 @@ const styles = StyleSheet.create({
     fontVariant: ['tabular-nums'],
   },
   progressBarBg: {
-    height: 6,
-    backgroundColor: Colors.bg.primary,
-    borderRadius: 3,
+    height: 4,
+    backgroundColor: Colors.bg.elevated,
+    borderRadius: 2,
     overflow: 'hidden',
+    marginLeft: 34,
   },
   progressBarFill: {
     height: '100%',
-    borderRadius: 3,
+    backgroundColor: Colors.text.secondary,
+    borderRadius: 2,
   },
-  // Stat grid
   statGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: Spacing.xl,
+    gap: 20,
   },
   statItem: {
-    flex: 1,
-    minWidth: 80,
-    alignItems: 'center',
+    width: '45%',
   },
   statValue: {
-    fontSize: 36,
+    fontSize: 28,
     fontWeight: '300',
     color: Colors.text.primary,
     fontVariant: ['tabular-nums'],
+    marginBottom: 4,
   },
   statLabel: {
-    fontSize: 11,
-    fontWeight: '500',
+    ...Typography.caption,
     color: Colors.text.muted,
-    letterSpacing: 0.5,
-    marginTop: Spacing.xs,
     textTransform: 'uppercase',
+    letterSpacing: 1,
   },
 });
